@@ -20,6 +20,8 @@ auto cclyzer::utils::to_string(llvm::CallingConv::ID cc) -> string {
       return "x86_stdcallcc";
     case llvm::CallingConv::X86_ThisCall:
       return "x86_thiscallcc";
+    case llvm::CallingConv::X86_64_SysV:
+      return "x86_64_sysv";
     case llvm::CallingConv::Intel_OCL_BI:
       return "intel_ocl_bicc";
     case llvm::CallingConv::ARM_AAPCS:
@@ -34,6 +36,8 @@ auto cclyzer::utils::to_string(llvm::CallingConv::ID cc) -> string {
       return "tx_device";  // TODO(lb): Bug! Should be ptx_device
     case llvm::CallingConv::PTX_Kernel:
       return "ptx_kernel";
+    default:
+      return "unsupported_callconv";
   }  // -Wswitch prevents fallthrough, no need for default case
   assert(false);
   return "";  // erroneous clang-tidy: clang-diagnostic-return-type

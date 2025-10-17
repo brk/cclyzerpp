@@ -869,6 +869,10 @@ static auto atomic_binop_string(const llvm::AtomicRMWInst::BinOp &op)
     case llvm::AtomicRMWInst::FMin:
       return "fmin";
 #endif
+    case llvm::AtomicRMWInst::UIncWrap:
+      return "uincwrap";
+    case llvm::AtomicRMWInst::UDecWrap:
+      return "udecwrap";
     case llvm::AtomicRMWInst::BAD_BINOP:
       malformedModule("bad atomicrmw binop");
   }  // -Wswitch prevents fallthrough, no need for default case

@@ -80,6 +80,9 @@ void TypeVisitor::visitType(const llvm::Type *type) {
       visitVectorType(cast<VectorType>(type));
       return;
 #endif
+    case llvm::Type::TargetExtTyID:  // TODO: handle this type
+      unknown("type", type);
+      return;
     case llvm::Type::X86_MMXTyID:  // TODO: handle this type
       unknown("type", type);
       return;

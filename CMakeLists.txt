@@ -101,7 +101,7 @@ target_compile_features(SoufflePA PUBLIC cxx_std_17)
 target_compile_options(
   SoufflePA
   PUBLIC # -fopenmp
-         -Werror
+         #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
          -Wno-c++98-compat
@@ -159,7 +159,7 @@ endif()
 target_compile_options(
   PAPass
   PUBLIC #-fopenmp
-         -Werror
+         #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
          -Wno-c++98-compat

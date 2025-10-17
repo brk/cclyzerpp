@@ -99,7 +99,9 @@ auto PointerAnalysisAAResult::alias(
     const auto from = std::get<3>(tuple);
     if (from == location.Ptr) {
       if (other_points_to_set.find(to) != other_points_to_set.end()) {
-#if LLVM_VERSION_MAJOR > 15
+#if LLVM_VERSION_MAJOR > 16
+        return llvm::AAResultBase::alias(location, other_location, AAQI, nullptr);
+#elif LLVM_VERSION_MAJOR > 15
         return llvm::AAResultBase::alias(location, other_location, AAQI);
 #else
         return AAResultBase::alias(location, other_location, AAQI);
@@ -111,7 +113,9 @@ auto PointerAnalysisAAResult::alias(
 
     if (from == other_location.Ptr) {
       if (points_to_set.find(to) != points_to_set.end()) {
-#if LLVM_VERSION_MAJOR > 15
+#if LLVM_VERSION_MAJOR > 16
+        return llvm::AAResultBase::alias(location, other_location, AAQI, nullptr);
+#elif LLVM_VERSION_MAJOR > 15
         return llvm::AAResultBase::alias(location, other_location, AAQI);
 #else
         return AAResultBase::alias(location, other_location, AAQI);
