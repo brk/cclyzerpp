@@ -267,11 +267,11 @@ auto LegacyPointerAnalysis::runOnModule(llvm::Module &mod) -> bool {
     fs::create_directories(output_dir);
   }
 
-  llvm::Optional<fs::path> signatures_path;
+  std::optional<fs::path> signatures_path;
   if (signatures != "") {
-    signatures_path = llvm::Optional<fs::path>(fs::path(signatures));
+    signatures_path = std::optional<fs::path>(fs::path(signatures));
   } else {
-    signatures_path = llvm::Optional<fs::path>();
+    signatures_path = std::optional<fs::path>();
   }
 
   auto [dir, llvm_val_map] =

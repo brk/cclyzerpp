@@ -15,7 +15,7 @@ using cclyzer::Options;
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays)
 Options::Options(int argc, char* argv[]) {
-  const std::string app_name = fs::basename(argv[0]);
+  const std::string app_name = fs::path(argv[0]).filename().string();
   fs::path outdir;
   fs::path signatures;
   fs::path signatures_sentinel("SENTINEL");
@@ -149,8 +149,7 @@ void Options::set_output_dir(fs::path path, bool shouldForce) {
 
   // Remove old contents
   if (shouldForce) {
-    for (auto& entry :
-         boost::make_iterator_range(fs::directory_iterator(path), {})) {
+    for (const auto& entry : fs::directory_iterator(path)) {
       remove_all(entry.path());
     }
   }
@@ -170,5 +169,5 @@ void Options::set_signatures(fs::path path) {
     std::cerr << "No such signature file: " << path << std::endl;
     exit(ERROR_IN_COMMAND_LINE);
   }
-  signatures = llvm::Optional<boost::filesystem::path>(std::move(path));
+  signatures = std::optional<boost::filesystem::path>(std::move(path));
 }

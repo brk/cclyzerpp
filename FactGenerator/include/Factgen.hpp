@@ -1,8 +1,6 @@
 #ifndef FACT_GENERATOR_HPP__
 #define FACT_GENERATOR_HPP__
 
-#include <llvm/ADT/Optional.h>
-
 #include <boost/filesystem.hpp>
 #include <string>
 
@@ -16,7 +14,7 @@ void factgen(
     FileIt firstFile,
     FileIt endFile,
     const boost::filesystem::path &outputDir,
-    const llvm::Optional<boost::filesystem::path> &signatures,
+    const std::optional<boost::filesystem::path> &signatures,
     const ContextSensitivity &context_sensitivity) {
   return factgen(
       firstFile, endFile, outputDir, signatures, context_sensitivity, "\t");
@@ -27,7 +25,7 @@ void factgen(
     FileIt firstFile,
     FileIt endFile,
     const boost::filesystem::path &outputDir,
-    const llvm::Optional<boost::filesystem::path> &signatures,
+    const std::optional<boost::filesystem::path> &signatures,
     const ContextSensitivity &context_sensitivity,
     const std::string &delim);
 }  // namespace cclyzer

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <llvm/ADT/Optional.h>
 #include <llvm/IR/Module.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/flyweight.hpp>
 #include <string>
 #include <tuple>
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -19,7 +19,7 @@ namespace fs = boost::filesystem;
 auto factgen_module(
     llvm::Module &,
     const fs::path &,
-    const llvm::Optional<boost::filesystem::path> &,
+    const std::optional<boost::filesystem::path> &,
     const ContextSensitivity)
     -> std::tuple<
         boost::filesystem::path,
