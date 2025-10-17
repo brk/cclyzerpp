@@ -18,7 +18,7 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 
-find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem program_options
+find_package(Boost 1.71 REQUIRED COMPONENTS filesystem program_options
                                             iostreams)
 
 find_package(OpenMP)
@@ -91,7 +91,7 @@ add_library(SoufflePA SHARED ${CMAKE_CURRENT_LIST_DIR}/src/PAInterface.cpp
                              $<TARGET_OBJECTS:SoufflePAObject>)
 
 target_link_libraries(
-  SoufflePA PRIVATE Boost::system Boost::filesystem Boost::program_options
+  SoufflePA PRIVATE Boost::filesystem Boost::program_options
                     Boost::iostreams ${OpenMP_CXX_LIBRARIES})
 
 # Use C++17 to compile our pass (i.e., supply -std=c++17).
@@ -190,7 +190,7 @@ target_include_directories(
 llvm_map_components_to_libnames(factgen_llvm_libs support core irreader)
 target_link_libraries(
   factgen-exe
-  PRIVATE Boost::system Boost::filesystem Boost::program_options
+  PRIVATE Boost::filesystem Boost::program_options
           Boost::iostreams ${OpenMP_CXX_LIBRARIES} ${factgen_llvm_libs})
 
 target_sources(factgen-exe PRIVATE ${FACTGEN_LIB_SOURCES})
