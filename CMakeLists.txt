@@ -194,13 +194,12 @@ add_executable(factgen-exe ${CMAKE_CURRENT_LIST_DIR}/FactGenerator/src/Main.cpp)
 target_compile_features(factgen-exe PUBLIC cxx_std_17)
 target_include_directories(
   factgen-exe SYSTEM PRIVATE ${CMAKE_CURRENT_LIST_DIR}/FactGenerator/include)
-llvm_map_components_to_libnames(factgen_llvm_libs support core irreader)
 
 target_link_libraries(
   factgen-exe
   PRIVATE Boost::filesystem Boost::program_options
           Boost::iostreams ${OpenMP_CXX_LIBRARIES}
-          ${factgen_llvm_libs})
+          LLVM)
 
 target_sources(factgen-exe PRIVATE ${FACTGEN_LIB_SOURCES})
 
