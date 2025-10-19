@@ -46,8 +46,9 @@ add_subdirectory(FactGenerator)
 # TODO(lb): Remove --disable-transformers=ExpandEqrelsTransformer when
 # https://github.com/souffle-lang/souffle/issues/2257 is fixed and Soufflé gets
 # upgraded.
-set(SOUFFLE_FLAGS -PSIPS:max-bound
-                  --disable-transformers=ExpandEqrelsTransformer)
+set(SOUFFLE_FLAGS -PSIPS:max-bound -w
+                  --disable-transformers=ExpandEqrelsTransformer
+                  )
 if(OPENMP_FOUND)
   set(SOUFFLE_FLAGS "${SOUFFLE_FLAGS} -jauto")
 endif(OPENMP_FOUND)
@@ -259,4 +260,29 @@ if(UBSAN)
   undefined_behavior_sanitizer(factgen-exe)
 endif()
 
-install(TARGETS factgen-exe PAPass SoufflePA)
+# -----------------------------------------------------------------------------
+
+add_executable(cc2cbor src/cc2cbor.cpp)
+target_compile_features(cc2cbor PUBLIC cxx_std_17)
+target_include_directories(
+  cc2cbor SYSTEM PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/FactGenerator/include/
+    ${CMAKE_CURRENT_LIST_DIR})
+target_link_libraries(cc2cbor PRIVATE
+  Boost::filesystem Boost::program_options
+  Boost::iostreams
+  $<TARGET_OBJECTS:SoufflePAObject>
+  z
+  LLVM)
+target_include_directories(cc2cbor SYSTEM PUBLIC ${SOUFFLE_INCLUDE})
+
+target_compile_options(cc2cbor PRIVATE ${SOUFFLE_COMPILE_FLAGS})
+target_compile_definitions(cc2cbor PRIVATE __EMBEDDED_SOUFFLE__)
+target_compile_definitions(cc2cbor PRIVATE USE_LIBZ)
+if(NOT LLVM_ENABLE_RTTI)
+  target_compile_options(cc2cbor PRIVATE -fno-rtti)
+endif()
+
+# -----------------------------------------------------------------------------
+
+install(TARGETS factgen-exe PAPass SoufflePA cc2cbor)
