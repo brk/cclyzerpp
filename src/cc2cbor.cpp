@@ -239,6 +239,17 @@ static auto da_str(Analysis which) -> std::string {
   assert(false && "unreachable");
 }
 
+// Helper function to convert llvm::Value* to string
+std::string llvm_value_to_string(const llvm::Value* val) {
+    std::string str;
+    llvm::raw_string_ostream os(str);
+    if (val) {
+        val->print(os);
+    } else {
+        os << "nullptr";
+    }
+    return os.str();
+}
 
 int main(int argc, char *argv[]) {
     llvm::cl::ParseCommandLineOptions(argc, argv, "cclyzer++ standalone analysis\n");
@@ -362,6 +373,100 @@ int main(int argc, char *argv[]) {
     if (!cclyzer::datalog_debug_option) {
         boost::filesystem::remove_all(dir);
     }
+
+    // 3a. Print relation contents
+    std::cout << "\n--- Relation: context_to_string ---\n";
+    for (const auto& entry : result.getContextToString()) {
+        std::cout << "  " << entry.first << ", " << entry.second << "\n";
+    }
+
+    std::cout << "\n--- Relation: variable_points_to ---\n";
+    for (const auto& entry : result.getVariablePointsTo()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << ", "
+                  << llvm_value_to_string(std::get<3>(entry)) << "\n";
+    }
+
+    std::cout << "\n--- Relation: pointer_points_to ---\n";
+    for (const auto& entry : result.getPointerPointsTo()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << ", "
+                  << std::get<3>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: alloc_may_alias ---\n";
+    for (const auto& entry : result.getAllocMayAlias()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: alloc_must_alias ---\n";
+    for (const auto& entry : result.getAllocMustAlias()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: alloc_subregion ---\n";
+    for (const auto& entry : result.getAllocSubregion()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: alloc_contains ---\n";
+    for (const auto& entry : result.getAllocContains()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: operand_points_to ---\n";
+    for (const auto& entry : result.getOperandPointsTo()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << ", "
+                  << llvm_value_to_string(std::get<3>(entry)) << "\n";
+    }
+
+    std::cout << "\n--- Relation: global_allocations ---\n";
+    for (const auto& entry : result.getGlobalAllocations()) {
+        std::cout << "  " << llvm_value_to_string(std::get<0>(entry)) << ", "
+                  << std::get<1>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: allocation_sizes ---\n";
+    for (const auto& entry : result.getAllocationSizes()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << std::get<1>(entry) << ", "
+                  << std::get<2>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: allocation_sites ---\n";
+    for (const auto& entry : result.getAllocationSites()) {
+        std::cout << "  " << std::get<0>(entry) << ", "
+                  << llvm_value_to_string(std::get<1>(entry)) << ", "
+                  << std::get<2>(entry) << ", "
+                  << std::get<3>(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: null_ptr_set ---\n";
+    for (const auto& entry : result.getNullPtrSet()) {
+        std::cout << "  " << llvm_value_to_string(entry) << "\n";
+    }
+
+    std::cout << "\n--- Relation: callgraph ---\n";
+    for (const auto& entry : result.getCallGraph()) {
+        std::cout << "  Key: " << llvm_value_to_string(entry.first) << ", Value: ("
+                  << std::get<0>(entry.second) << ", "
+                  << std::get<1>(entry.second) << ", "
+                  << llvm_value_to_string(std::get<2>(entry.second)) << ")\n";
+    }
+
+
 
     // 3. Print relation sizes
     std::cout << "Relation sizes:\n";
