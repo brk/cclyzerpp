@@ -6,10 +6,17 @@ project(cclyzer++ LANGUAGES C CXX VERSION 0.7.0)
 # -----------------------------------------------------------------------------
 
 if(NOT (DEFINED LLVM_MAJOR_VERSION))
-  set(LLVM_MAJOR_VERSION 14)
+  set(LLVM_MAJOR_VERSION 18)
+endif()
+if(NOT (DEFINED LLVM_PARTIAL_VERSION))
+  set(LLVM_PARTIAL_VERSION 18.1)
 endif()
 
-find_package(LLVM ${LLVM_MAJOR_VERSION}.0 REQUIRED CONFIG)
+if(NOT LLVM_PARTIAL_VERSION MATCHES "^${LLVM_MAJOR_VERSION}")
+    message(FATAL_ERROR "LLVM_PARTIAL_VERSION (${LLVM_PARTIAL_VERSION}) does not start with LLVM_MAJOR_VERSION (${LLVM_MAJOR_VERSION})")
+endif()
+
+find_package(LLVM ${LLVM_PARTIAL_VERSION} REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
@@ -188,10 +195,12 @@ target_compile_features(factgen-exe PUBLIC cxx_std_17)
 target_include_directories(
   factgen-exe SYSTEM PRIVATE ${CMAKE_CURRENT_LIST_DIR}/FactGenerator/include)
 llvm_map_components_to_libnames(factgen_llvm_libs support core irreader)
+
 target_link_libraries(
   factgen-exe
   PRIVATE Boost::filesystem Boost::program_options
-          Boost::iostreams ${OpenMP_CXX_LIBRARIES} ${factgen_llvm_libs})
+          Boost::iostreams ${OpenMP_CXX_LIBRARIES}
+          ${factgen_llvm_libs})
 
 target_sources(factgen-exe PRIVATE ${FACTGEN_LIB_SOURCES})
 
