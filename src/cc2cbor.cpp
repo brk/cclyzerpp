@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <sys/resource.h>
 
 #include "FactGenerator/include/ContextSensitivity.hpp"
 #include "FactGenerator/src/ContextSensitivity.cpp"
@@ -253,6 +254,14 @@ std::string llvm_value_to_string(const llvm::Value* val) {
 
 int main(int argc, char *argv[]) {
     llvm::cl::ParseCommandLineOptions(argc, argv, "cclyzer++ standalone analysis\n");
+
+    // Set file descriptor limit to 1024 to ensure Souffle can open enough files
+    struct rlimit rl;
+    rl.rlim_cur = 1024;
+    rl.rlim_max = 1024;
+    if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
+        std::cerr << "Warning: Failed to increase file descriptor limit\n";
+    }
 
     // 1. Load LLVM module
     llvm::LLVMContext context;
