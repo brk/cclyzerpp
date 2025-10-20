@@ -472,6 +472,39 @@ unification.unify_ptr(?aCtx, ?alloc, ?ctx, ?operand) :-
 unification.unify_var(?aCtx, ?alloc, ?ctx, ?var) :-
   unification_signatures.sig_var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
+.init unification_escape = EscapeAnalysis
+
+unification_escape.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+
+unification_escape.reachable_context(?ctx, ?func) :-
+  unification.callgraph.reachable_context(?ctx, ?func).
+
+unification_escape.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
+  unification.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
+
+unification_escape.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr) :-
+  unification.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr).
+
+unification_escape.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
+  unification.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
+
+// Copy escape analysis results to top-level relations
+mutated_or_escaped_global(?alloc) :-
+  global_allocation(?alloc),
+  unification_escape.component_mutated_global(?alloc).
+
+mutated_or_escaped_global(?alloc) :-
+  global_allocation(?alloc),
+  empty_alloc_context(?aCtx),
+  unification_escape.component_escaped_alloc(?aCtx, ?alloc).
+
+escaping_function_arg(?func, ?index) :-
+  unification_escape.component_escaping_arg(?func, ?index).
+
+unknown_function(?func) :-
+  unification_escape.component_unknown_func(?func).
+
 .init unification_memcpy = Memcpy
 
 unification_memcpy.allocation_type(?alloc, ?type) :-

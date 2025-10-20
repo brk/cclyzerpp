@@ -1,3 +1,5 @@
+.claude/
+
 # Intermediate data
 # Explicitly allow CSV files in the gold tests, as these are intentionally checked in.
 *.csv

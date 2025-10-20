@@ -30,6 +30,7 @@ set(DL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/points-to/allocations-subobjects-aliases.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/region.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/signatures.dl
+    ${CMAKE_CURRENT_LIST_DIR}/points-to/escape-analysis.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/unification.dl
     ${CMAKE_CURRENT_LIST_DIR}/context/drop.dl
     ${CMAKE_CURRENT_LIST_DIR}/context/lift.dl

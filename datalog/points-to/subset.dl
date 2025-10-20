@@ -111,6 +111,39 @@ subset.ptr_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
 subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   subset_signatures.sig_var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
+.init subset_escape = EscapeAnalysis
+
+subset_escape.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+
+subset_escape.reachable_context(?ctx, ?func) :-
+  subset.callgraph.reachable_context(?ctx, ?func).
+
+subset_escape.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
+  subset.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
+
+subset_escape.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr) :-
+  subset.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr).
+
+subset_escape.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
+  subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
+
+// Copy escape analysis results to top-level relations
+mutated_or_escaped_global(?alloc) :-
+  global_allocation(?alloc),
+  subset_escape.component_mutated_global(?alloc).
+
+mutated_or_escaped_global(?alloc) :-
+  global_allocation(?alloc),
+  empty_alloc_context(?aCtx),
+  subset_escape.component_escaped_alloc(?aCtx, ?alloc).
+
+escaping_function_arg(?func, ?index) :-
+  subset_escape.component_escaping_arg(?func, ?index).
+
+unknown_function(?func) :-
+  subset_escape.component_unknown_func(?func).
+
 .init subset_memcpy = Memcpy
 
 subset_memcpy.allocation_type(?alloc, ?type) :-

@@ -466,6 +466,27 @@ int main(int argc, char *argv[]) {
                   << llvm_value_to_string(std::get<2>(entry.second)) << ")\n";
     }
 
+    // Print escape analysis relations
+    std::cout << "\n--- Relation: mutated_or_escaped_global ---\n";
+    auto mutated_or_escaped_rel = pa->relationToVector<boost::flyweight<std::string>>(
+        "mutated_or_escaped_global", llvm_val_map);
+    for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+        std::cout << "  " << std::get<0>(alloc_tuple) << "\n";
+    }
+
+    std::cout << "\n--- Relation: escaping_function_arg ---\n";
+    auto escaping_arg_rel = pa->relationToVector<const llvm::Value *, int>(
+        "escaping_function_arg", llvm_val_map);
+    for (const auto& [func, index] : escaping_arg_rel) {
+        std::cout << "  Function: " << llvm_value_to_string(func) << ", Arg Index: " << index << "\n";
+    }
+
+    std::cout << "\n--- Relation: unknown_function ---\n";
+    auto unknown_func_rel = pa->relationToVector<const llvm::Value *>(
+        "unknown_function", llvm_val_map);
+    for (const auto& func_tuple : unknown_func_rel) {
+        std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
+    }
 
 
     // 3. Print relation sizes
@@ -483,6 +504,9 @@ int main(int argc, char *argv[]) {
     std::cout << "  allocation_sites: " << result.getAllocationSites().size() << "\n";
     std::cout << "  null_ptr_set: " << result.getNullPtrSet().size() << "\n";
     std::cout << "  callgraph: " << result.getCallGraph().size() << "\n";
+    std::cout << "  mutated_or_escaped_global: " << mutated_or_escaped_rel.size() << "\n";
+    std::cout << "  escaping_function_arg: " << escaping_arg_rel.size() << "\n";
+    std::cout << "  unknown_function: " << unknown_func_rel.size() << "\n";
 
     return 0;
 }

@@ -26,3 +26,4 @@
 #include "signatures.dl"
 #include "types.dl"
 #include "region.dl"
+#include "escape-analysis.dl"

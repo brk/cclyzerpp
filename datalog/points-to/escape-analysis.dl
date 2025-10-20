@@ -1,0 +1,249 @@
+//------------------------------------------------------------------------------
+// [Escape Analysis for Global Allocations]
+//
+// This analysis identifies global allocations that are mutated or escaped.
+// A global is considered "mutated or escaped" if:
+//  1. It is the target of a store instruction (mutation)
+//  2. It is returned from a function (escape)
+//  3. It is stored to memory (other globals, heap, stack) (escape)
+//  4. It is passed to an escaping function argument position (escape)
+//
+// For external/unknown functions, all arguments are conservatively
+// considered to escape.
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// [Core Output Relations]
+//------------------------------------------------------------------------------
+
+// Main output: Global allocations that are mutated or escaped
+.decl mutated_or_escaped_global(?alloc: GlobalAllocation)
+
+// Helper: Which function argument positions cause values to escape
+// This is computed interprocedurally by analyzing how arguments are used
+.decl escaping_function_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+
+// Helper: Functions without definitions (external/unknown)
+// All arguments to such functions are conservatively assumed to escape
+.decl unknown_function(?func: FunctionDecl)
+
+.comp EscapeAnalysis {
+
+  //----------------------------------------------------------------------------
+  // "Input"/declared rules
+  //
+  // https://souffle-lang.github.io/components#input-rules
+  //----------------------------------------------------------------------------
+
+  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
+  .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
+  .decl ptr_points_to(?aCtx: Context, ?alloc: Allocation, ?ptrACtx: Context, ?ptrAlloc: Allocation) inline
+  .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
+
+  //----------------------------------------------------------------------------
+  // "Output"/defined rules
+  //----------------------------------------------------------------------------
+
+  // Track which allocations have escaped (not just globals, for transitive reasoning)
+  .decl escaped_alloc(?aCtx: Context, ?alloc: Allocation)
+
+  // Track globals that are mutated
+  .decl mutated_global(?alloc: GlobalAllocation)
+
+  // Track which function argument positions cause escape
+  .decl escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+
+  // Track unknown/external functions
+  .decl unknown_func(?func: FunctionDecl)
+
+  //----------------------------------------------------------------------------
+  // [Unknown/External Functions]
+  //----------------------------------------------------------------------------
+
+  unknown_func(?func) :-
+    func_decl(?func),
+    !func_decl_to_defn(?func, _).
+
+  // Unknown functions - all pointer arguments escape
+  escaping_arg(?func, ?index) :-
+    unknown_func(?func),
+    func_ty(?func, ?type),
+    func_type_param(?type, ?index, ?paramType),
+    pointer_type(?paramType).
+
+  //----------------------------------------------------------------------------
+  // [Mutation Detection]
+  //
+  // A global is mutated if it is the target of a store instruction.
+  // We use the points-to analysis to determine what a store address points to.
+  //----------------------------------------------------------------------------
+
+  mutated_global(?alloc) :-
+    global_allocation(?alloc),
+    empty_alloc_context(?aCtx),
+    reachable_context(?ctx, ?instrFunc),
+    instr_func(?instr, ?instrFunc),
+    store_instr_address(?instr, ?address),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?address).
+
+  //----------------------------------------------------------------------------
+  // [Escape via Return]
+  //
+  // A value escapes if it is returned from a function.
+  // We track this at the allocation level using points-to information.
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?aCtx, ?alloc) :-
+    reachable_context(?ctx, ?func),
+    func_returns_value(?retValue, ?func),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
+
+  //----------------------------------------------------------------------------
+  // [Escape via Store to Memory]
+  //
+  // A value escapes if it is stored to memory (globals, heap, etc.)
+  // This is the traditional "address taken" escape - if we store a pointer
+  // to an allocation, that allocation has escaped.
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?aCtx, ?alloc) :-
+    reachable_context(?ctx, ?instrFunc),
+    instr_func(?instr, ?instrFunc),
+    store_instr_value(?instr, ?value),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?value).
+
+  //----------------------------------------------------------------------------
+  // [Escape via Function Arguments]
+  //
+  // Case 2: Argument is returned from the function
+  // If a parameter flows to a return value, that argument position escapes
+  //----------------------------------------------------------------------------
+
+  escaping_arg(?callee, ?index) :-
+    func(?callee),
+    func_param(?callee, ?index, ?param),
+    func_returns_value(?retValue, ?callee),
+    // Simple data flow: parameter is directly returned
+    ?param = ?retValue.
+
+  escaping_arg(?callee, ?index) :-
+    func(?callee),
+    func_param(?callee, ?index, ?param),
+    func_returns_value(?retValue, ?callee),
+    // Points-to based data flow: return value points to what param points to
+    reachable_context(?ctx, ?callee),
+    var_points_to(?aCtx, ?alloc, ?ctx, ?param),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
+
+  // Case 3: Argument is stored to a global
+  escaping_arg(?callee, ?index) :-
+    func(?callee),
+    func_param(?callee, ?index, ?param),
+    reachable_context(?ctx, ?callee),
+    instr_func(?instr, ?callee),
+    store_instr_value(?instr, ?storeValue),
+    store_instr_address(?instr, ?storeAddr),
+    // The parameter points to something that's being stored
+    var_points_to(?aCtx, ?alloc, ?ctx, ?param),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?storeValue),
+    // The store is to a global
+    empty_alloc_context(?globalCtx),
+    operand_points_to(?globalCtx, ?globalAlloc, ?ctx, ?storeAddr),
+    global_allocation(?globalAlloc).
+
+  // Case 4: Argument is stored to already-escaped memory
+  escaping_arg(?callee, ?index) :-
+    func(?callee),
+    func_param(?callee, ?index, ?param),
+    reachable_context(?ctx, ?callee),
+    instr_func(?instr, ?callee),
+    store_instr_value(?instr, ?storeValue),
+    store_instr_address(?instr, ?storeAddr),
+    // The parameter points to something being stored
+    var_points_to(?aCtx, ?alloc, ?ctx, ?param),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?storeValue),
+    // The store is to an escaped location
+    operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?storeAddr),
+    escaped_alloc(?addrCtx, ?addrAlloc).
+
+  // Case 5: Argument is passed to another escaping function (call instruction)
+  escaping_arg(?caller, ?callerIndex) :-
+    func(?caller),
+    func_param(?caller, ?callerIndex, ?param),
+    reachable_context(?callerCtx, ?caller),
+    instr_func(?callInstr, ?caller),
+    call_instr(?callInstr),
+    actual_arg(?callInstr, ?calleeIndex, ?argValue),
+    // The parameter flows to the call argument
+    var_points_to(?aCtx, ?alloc, ?callerCtx, ?param),
+    operand_points_to(?aCtx, ?alloc, ?callerCtx, ?argValue),
+    // The callee's argument position escapes
+    call_instr_fn_target(?callInstr, ?callee),
+    escaping_arg(?callee, ?calleeIndex).
+
+  // Case 5: Argument is passed to another escaping function (invoke instruction)
+  escaping_arg(?caller, ?callerIndex) :-
+    func(?caller),
+    func_param(?caller, ?callerIndex, ?param),
+    reachable_context(?callerCtx, ?caller),
+    instr_func(?callInstr, ?caller),
+    invoke_instr(?callInstr),
+    actual_arg(?callInstr, ?calleeIndex, ?argValue),
+    // The parameter flows to the call argument
+    var_points_to(?aCtx, ?alloc, ?callerCtx, ?param),
+    operand_points_to(?aCtx, ?alloc, ?callerCtx, ?argValue),
+    // The callee's argument position escapes
+    invoke_instr_fn_target(?callInstr, ?callee),
+    escaping_arg(?callee, ?calleeIndex).
+
+  //----------------------------------------------------------------------------
+  // [Interprocedural Escape via Function Calls]
+  //
+  // When a global is passed to an escaping argument position, it escapes.
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?aCtx, ?alloc) :-
+    callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+    escaping_arg(?callee, ?index),
+    actual_arg(?callerInstr, ?index, ?arg),
+    operand_points_to(?aCtx, ?alloc, ?callerCtx, ?arg).
+
+  //----------------------------------------------------------------------------
+  // [Transitive Escape]
+  //
+  // If allocation A points to allocation B, and A escapes, then B also escapes
+  // (because external code can now reach B through A).
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?pointeeCtx, ?pointee) :-
+    escaped_alloc(?ptrCtx, ?ptr),
+    ptr_points_to(?pointeeCtx, ?pointee, ?ptrCtx, ?ptr).
+
+  //----------------------------------------------------------------------------
+  // [Component Output Relations]
+  //
+  // These will be copied to the top-level relations by subset.dl/unification.dl
+  //----------------------------------------------------------------------------
+
+  .decl component_mutated_global(?alloc: GlobalAllocation)
+  .decl component_escaped_alloc(?aCtx: Context, ?alloc: Allocation)
+  .decl component_escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+  .decl component_unknown_func(?func: FunctionDecl)
+
+  component_mutated_global(?alloc) :- mutated_global(?alloc).
+  component_escaped_alloc(?aCtx, ?alloc) :- escaped_alloc(?aCtx, ?alloc).
+  component_escaping_arg(?func, ?index) :- escaping_arg(?func, ?index).
+  component_unknown_func(?func) :- unknown_func(?func).
+}
+
+//------------------------------------------------------------------------------
+// [Final Results - Populated from Component Instances]
+//
+// These rules will be populated by subset.dl and unification.dl copying from
+// their respective component instances (subset_escape.* and unification_escape.*)
+//------------------------------------------------------------------------------
+
+// Note: The actual population happens in subset.dl and unification.dl, which do:
+//   mutated_or_escaped_global(?alloc) :- subset_escape.component_mutated_global(?alloc).
+//   etc.
