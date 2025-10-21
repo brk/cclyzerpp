@@ -262,27 +262,27 @@ endif()
 
 # -----------------------------------------------------------------------------
 
-add_executable(cc2cbor src/cc2cbor.cpp)
-target_compile_features(cc2cbor PUBLIC cxx_std_17)
+add_executable(cc2json src/cc2json.cpp)
+target_compile_features(cc2json PUBLIC cxx_std_17)
 target_include_directories(
-  cc2cbor SYSTEM PRIVATE
+  cc2json SYSTEM PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/FactGenerator/include/
     ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(cc2cbor PRIVATE
+target_link_libraries(cc2json PRIVATE
   Boost::filesystem Boost::program_options
   Boost::iostreams
   $<TARGET_OBJECTS:SoufflePAObject>
   z
   LLVM)
-target_include_directories(cc2cbor SYSTEM PUBLIC ${SOUFFLE_INCLUDE})
+target_include_directories(cc2json SYSTEM PUBLIC ${SOUFFLE_INCLUDE})
 
-target_compile_options(cc2cbor PRIVATE ${SOUFFLE_COMPILE_FLAGS})
-target_compile_definitions(cc2cbor PRIVATE __EMBEDDED_SOUFFLE__)
-target_compile_definitions(cc2cbor PRIVATE USE_LIBZ)
+target_compile_options(cc2json PRIVATE ${SOUFFLE_COMPILE_FLAGS})
+target_compile_definitions(cc2json PRIVATE __EMBEDDED_SOUFFLE__)
+target_compile_definitions(cc2json PRIVATE USE_LIBZ)
 if(NOT LLVM_ENABLE_RTTI)
-  target_compile_options(cc2cbor PRIVATE -fno-rtti)
+  target_compile_options(cc2json PRIVATE -fno-rtti)
 endif()
 
 # -----------------------------------------------------------------------------
 
-install(TARGETS factgen-exe PAPass SoufflePA cc2cbor)
+install(TARGETS factgen-exe PAPass SoufflePA cc2json)
