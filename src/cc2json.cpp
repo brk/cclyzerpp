@@ -247,15 +247,32 @@ static auto da_str(Analysis which) -> std::string {
   assert(false && "unreachable");
 }
 
-// Helper function to convert llvm::Value* to string
+// Helper function to convert llvm::Value* to string, printing only function names for functions
 std::string llvm_value_to_string(const llvm::Value* val) {
+    if (!val) {
+        return "nullptr";
+    }
+
+    // Check if this is a function
+    if (const auto* func = llvm::dyn_cast<llvm::Function>(val)) {
+        std::string str;
+        llvm::raw_string_ostream os(str);
+        // Print just the function signature/name, not the body
+        os << func->getReturnType() << " @" << func->getName() << "(";
+        bool first = true;
+        for (const auto& arg : func->args()) {
+            if (!first) os << ", ";
+            os << arg.getType();
+            first = false;
+        }
+        os << ")";
+        return os.str();
+    }
+
+    // For non-functions, use the regular printing
     std::string str;
     llvm::raw_string_ostream os(str);
-    if (val) {
-        val->print(os);
-    } else {
-        os << "nullptr";
-    }
+    val->print(os);
     return os.str();
 }
 
