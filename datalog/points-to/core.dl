@@ -58,6 +58,18 @@
     instr_func(?instr, ?instrFunc),
     callgraph.reachable_context(?ctx, ?instrFunc).
 
+  // Escaped functions can be called from external/unknown code with unknown arguments.
+  // Model this by making pointer-typed parameters of escaped functions point to unknown.
+  var_points_to(?aCtx, ?unknown, ?ctx, ?param) :-
+    empty_alloc_context(?aCtx),
+    unknown_location(?unknown),
+    global_allocation_by_func(?func, ?alloc),
+    mutated_or_escaped_global(?alloc),
+    callgraph.reachable_context(?ctx, ?func),
+    func_param(?func, ?index, ?param),
+    variable_has_type(?param, ?paramType),
+    pointer_type(?paramType).
+
   //----------------------------
   // Dereferencing Pointers
   //----------------------------

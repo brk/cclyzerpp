@@ -62,6 +62,21 @@ func_by_location(?alloc, ?callee) :-
     ; called_at_exit(?func)
     ).
 
+  // Functions that have escaped (passed to external code) should be considered
+  // reachable from an unknown call site, as external code can call them with
+  // arbitrary arguments.
+  reachable_context(?ctx, ?func) :-
+    ! insensitive(),
+    global_allocation_by_func(?func, ?alloc),
+    mutated_or_escaped_global(?alloc),
+    startup_context(?ctx).
+
+  reachable_context(?ctx, ?func) :-
+    insensitive(),
+    empty_context(?ctx),
+    global_allocation_by_func(?func, ?alloc),
+    mutated_or_escaped_global(?alloc).
+
   .decl reachable_store(?ctx: Context, ?toAddress: Operand, ?value: Operand)
 
   reachable_store(?ctx, ?toAddress, ?value) :-
