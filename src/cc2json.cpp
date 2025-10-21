@@ -741,6 +741,181 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        json_file << "\n  ],\n";
+
+        // Add connected components
+        json_file << "  \"call_graph_components\": [\n";
+
+        // Build a map from representative to component data
+        // Tuple: (call_sites, call_targets, has_unknown, has_external)
+        std::map<std::string, std::tuple<std::set<std::string>, std::set<std::string>, bool, bool>> components;
+
+        // Build map of node -> representative
+        std::map<std::string, std::string> node_to_repr;
+        for (const auto& [node, repr] : component_repr_rel) {
+            node_to_repr[node.get()] = repr.get();
+        }
+
+        // Build sets of all call sites and all call targets from calls_target relation
+        std::set<std::string> all_call_sites;
+        std::set<std::string> all_call_targets;
+
+        for (const auto& [call_site, callee] : calls_target_rel) {
+            std::string site_str = call_site.get();
+            std::string callee_str = callee.get();
+
+            all_call_sites.insert(site_str);
+            if (callee_str != "UNKNOWN") {
+                all_call_targets.insert(callee_str);
+            }
+        }
+
+        // Get all nodes in each component
+        auto call_graph_component_rel = pa->relationToVector<
+            boost::flyweight<std::string>,
+            boost::flyweight<std::string>>(
+            cc_prefix + ".call_graph_component", llvm_val_map);
+
+        // Collect call sites and callees for each component
+        for (const auto& [node, _] : call_graph_component_rel) {
+            std::string node_str = node.get();
+
+            // Skip UNKNOWN nodes
+            if (node_str == "UNKNOWN") {
+                continue;
+            }
+
+            // Find representative for this node
+            auto repr_it = node_to_repr.find(node_str);
+            if (repr_it == node_to_repr.end()) {
+                continue;
+            }
+            std::string repr = repr_it->second;
+
+            // Initialize component entry if not exists
+            if (components.find(repr) == components.end()) {
+                components[repr] = std::make_tuple(
+                    std::set<std::string>(),
+                    std::set<std::string>(),
+                    false,
+                    false);
+            }
+
+            // Categorize node as call site or call target based on calls_target relation
+            if (all_call_sites.find(node_str) != all_call_sites.end()) {
+                std::get<0>(components[repr]).insert(node_str); // call_sites
+            }
+            if (all_call_targets.find(node_str) != all_call_targets.end()) {
+                std::get<1>(components[repr]).insert(node_str); // call_targets
+            }
+        }
+
+        // Check for components with UNKNOWN targets
+        for (const auto& repr_tuple : component_has_unknown_rel) {
+            std::string repr = std::get<0>(repr_tuple).get();
+            if (components.find(repr) == components.end()) {
+                components[repr] = std::make_tuple(
+                    std::set<std::string>(),
+                    std::set<std::string>(),
+                    true,
+                    false);
+            } else {
+                std::get<2>(components[repr]) = true;
+            }
+        }
+
+        // Build set of functions without definitions (external functions)
+        // Use the relationToVector that returns strings directly
+        auto func_without_defn_str_rel = pa->relationToVector<boost::flyweight<std::string>>(
+            "func_without_defn", llvm_val_map);
+        std::set<std::string> external_funcs;
+        for (const auto& func_tuple : func_without_defn_str_rel) {
+            external_funcs.insert(std::get<0>(func_tuple).get());
+        }
+
+        // Build set of escaped function allocations
+        std::set<std::string> escaped_funcs;
+        for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+            std::string name = std::get<0>(alloc_tuple).get();
+            // Strip "*global_alloc@" prefix if present
+            const std::string prefix = "*global_alloc@";
+            if (name.substr(0, prefix.length()) == prefix) {
+                name = name.substr(prefix.length());
+            }
+            escaped_funcs.insert(name);
+        }
+
+        // Check for components with external or escaped functions
+        for (auto& [repr, data] : components) {
+            const auto& call_targets = std::get<1>(data);
+            bool has_external = false;
+            for (const auto& target : call_targets) {
+                // Check if function is external (no definition)
+                if (external_funcs.find(target) != external_funcs.end()) {
+                    has_external = true;
+                    break;
+                }
+                // Check if function is escaped
+                // The target is in format "<file>:function" and escaped_funcs has "function"
+                // so we need to extract just the function name
+                std::string func_name = target;
+                size_t colon_pos = func_name.rfind(':');
+                if (colon_pos != std::string::npos) {
+                    func_name = func_name.substr(colon_pos + 1);
+                }
+                // Escaped functions can be considered to have unknown call sites.
+                if (escaped_funcs.find(func_name) != escaped_funcs.end()) {
+                    has_unknown = true;
+                    break;
+                }
+            }
+            std::get<3>(data) = has_external;
+        }
+
+        // Write components to JSON
+        first = true;
+        for (const auto& [repr, data] : components) {
+            const auto& [call_sites, call_targets, has_unknown, has_external] = data;
+
+            if (!first) {
+                json_file << ",\n";
+            }
+            first = false;
+
+            json_file << "    {\n";
+
+            // Write call_sites
+            json_file << "      \"call_sites\": [\n";
+            bool first_site = true;
+            for (const auto& site : call_sites) {
+                if (!first_site) {
+                    json_file << ",\n";
+                }
+                json_file << "        \"" << json_escape(site) << "\"";
+                first_site = false;
+            }
+            json_file << "\n      ],\n";
+
+            // Write call_targets
+            json_file << "      \"call_targets\": [\n";
+            bool first_target = true;
+            for (const auto& target : call_targets) {
+                if (!first_target) {
+                    json_file << ",\n";
+                }
+                json_file << "        \"" << json_escape(target) << "\"";
+                first_target = false;
+            }
+            json_file << "\n      ],\n";
+
+            // Write has_unknown
+            json_file << "      \"has_unknown\": " << (has_unknown ? "true" : "false") << ",\n";
+
+            // Write has_external
+            json_file << "      \"has_external\": " << (has_external ? "true" : "false") << "\n";
+            json_file << "    }";
+        }
+
         json_file << "\n  ]\n";
         json_file << "}\n";
         json_file.close();
