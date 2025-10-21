@@ -61,16 +61,89 @@
   // [Unknown/External Functions]
   //----------------------------------------------------------------------------
 
+  //----------------------------------------------------------------------------
+  // [Known Read-Only Function Arguments]
+  //
+  // For well-known external functions, we identify argument positions that are
+  // readonly (never mutated or escaped). This focuses on cases where mutable
+  // global variables (e.g., buffers, arrays) are commonly passed as readonly
+  // arguments.
+  //
+  // Note: We exclude string literal cases since those are immutable by C semantics.
+  //----------------------------------------------------------------------------
+
+  .decl known_readonly_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+
+  // Memory copy/move functions - source argument is readonly
+  // Common pattern: copying from global buffers
+  known_readonly_arg(?func, 1) :-
+    func_name(?func, ?name),
+    ( ?name = "@memcpy"    // memcpy(dest, src, n) - arg 1 (src) is readonly
+    ; ?name = "@memmove"   // memmove(dest, src, n) - arg 1 (src) is readonly
+    ).
+
+  // LLVM intrinsics for memory operations - source argument is readonly
+  // LLVM often lowers memcpy/memmove to intrinsics with type-specific names
+  known_readonly_arg(?func, 1) :-
+    func_name(?func, ?name),
+    ( substr(?name, 0, 16) = "@llvm.memcpy.p0"    // @llvm.memcpy.p0.p0.i64, etc.
+    ; substr(?name, 0, 17) = "@llvm.memmove.p0"   // @llvm.memmove.p0.p0.i64, etc.
+    ).
+
+  // Memory search functions - all pointer arguments are readonly
+  // Common pattern: searching in global buffers
+  known_readonly_arg(?func, ?index) :-
+    func_name(?func, ?name),
+    ( ?name = "@memchr"   // memchr(ptr, val, size) - arg 0 is readonly
+    ; ?name = "@memcmp"   // memcmp(ptr1, ptr2, size) - args 0,1 are readonly
+    ),
+    func_ty(?func, ?type),
+    func_type_param(?type, ?index, ?paramType),
+    pointer_type(?paramType).
+
+  // Binary search - array argument is readonly
+  // bsearch(key, array, count, size, compar) - args 0,1 are readonly
+  known_readonly_arg(?func, ?index) :-
+    func_name(?func, "@bsearch"),
+    (?index = 0 ; ?index = 1).
+
+  // String copy functions - source argument is readonly
+  // Common pattern: copying from global string buffers
+  known_readonly_arg(?func, 1) :-
+    func_name(?func, ?name),
+    ( ?name = "@strcpy"    // strcpy(dest, src) - arg 1 (src) is readonly
+    ; ?name = "@strncpy"   // strncpy(dest, src, n) - arg 1 (src) is readonly
+    ).
+
+  // String search/comparison - all pointer arguments are readonly
+  // Common pattern: searching or comparing global buffers/strings
+  known_readonly_arg(?func, ?index) :-
+    func_name(?func, ?name),
+    ( ?name = "@strlen"
+    ; ?name = "@strcmp"
+    ; ?name = "@strncmp"
+    ; ?name = "@strchr"
+    ; ?name = "@strrchr"
+    ; ?name = "@strstr"
+    ; ?name = "@strcspn"
+    ; ?name = "@strspn"
+    ; ?name = "@strpbrk"
+    ),
+    func_ty(?func, ?type),
+    func_type_param(?type, ?index, ?paramType),
+    pointer_type(?paramType).
+
   unknown_func(?func) :-
     func_decl(?func),
     !func_decl_to_defn(?func, _).
 
-  // Unknown functions - all pointer arguments escape
+  // Unknown functions - pointer arguments escape UNLESS marked as readonly
   escaping_arg(?func, ?index) :-
     unknown_func(?func),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
-    pointer_type(?paramType).
+    pointer_type(?paramType),
+    !known_readonly_arg(?func, ?index).
 
   //----------------------------------------------------------------------------
   // [Mutation Detection]
@@ -102,16 +175,27 @@
   //----------------------------------------------------------------------------
   // [Escape via Store to Memory]
   //
-  // A value escapes if it is stored to memory (globals, heap, etc.)
+  // A value escapes if it is stored to non-local memory (globals, heap, or
+  // already-escaped allocations). Storing to local stack allocations does NOT
+  // cause escape.
+  //
   // This is the traditional "address taken" escape - if we store a pointer
-  // to an allocation, that allocation has escaped.
+  // to an allocation into memory that has escaped, that allocation has also
+  // escaped (because external code can now reach it).
   //----------------------------------------------------------------------------
 
   escaped_alloc(?aCtx, ?alloc) :-
     reachable_context(?ctx, ?instrFunc),
     instr_func(?instr, ?instrFunc),
     store_instr_value(?instr, ?value),
-    operand_points_to(?aCtx, ?alloc, ?ctx, ?value).
+    store_instr_address(?instr, ?addr),
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?value),
+    // Only escape if stored to non-local memory
+    operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?addr),
+    ( global_allocation(?addrAlloc)
+    ; heap_allocation(?addrAlloc)
+    ; escaped_alloc(?addrCtx, ?addrAlloc)
+    ).
 
   //----------------------------------------------------------------------------
   // [Escape via Function Arguments]
