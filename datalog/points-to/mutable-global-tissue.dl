@@ -1,0 +1,71 @@
+//------------------------------------------------------------------------------
+// [Mutable Global Tissue]
+//
+// Computes the "tissue" of functions that are tainted by mutable or escaped
+// global variables. A function is in the tissue if it:
+// 1. Directly accesses a mutable_or_escaped_global variable, OR
+// 2. Calls (directly or transitively) a function that accesses such a global
+//
+// This represents the set of functions whose behavior may be affected by
+// mutable global state.
+//------------------------------------------------------------------------------
+
+.comp MutableGlobalTissue {
+  //----------------------------------------------------------------------------
+  // Input relations (must be provided by parent context)
+  //----------------------------------------------------------------------------
+
+  .decl mutated_or_escaped_global(?alloc: Allocation) inline
+  .decl global_allocation_by_variable(?var: GlobalVariable, ?alloc: Allocation) inline
+  .decl global_allocation_by_func(?func: FunctionDecl, ?alloc: Allocation) inline
+  .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
+  .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
+  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+
+  //----------------------------------------------------------------------------
+  // Output relations
+  //----------------------------------------------------------------------------
+
+  // Functions that directly access a mutable or escaped global
+  .decl directly_accesses_mutable_global(?func: FunctionDecl)
+
+  // Functions in the mutable global tissue (direct access or transitive caller)
+  .decl mutable_global_tissue(?func: FunctionDecl)
+
+  //----------------------------------------------------------------------------
+  // Implementation
+  //----------------------------------------------------------------------------
+
+  // Helper: Allocations that are function allocations
+  .decl _is_function_allocation(?alloc: Allocation)
+  _is_function_allocation(?alloc) :-
+    global_allocation_by_func(_, ?alloc).
+
+  // Helper: Allocations that are string constants (contain ".str" in their name)
+  .decl _is_string_constant(?alloc: Allocation)
+  _is_string_constant(?alloc) :-
+    mutated_or_escaped_global(?alloc),
+    ?allocStr = as(?alloc, symbol),
+    contains(".str", ?allocStr).
+
+  // A function directly accesses a mutable/escaped global if it uses a constant
+  // (in any instruction) that points to a mutable/escaped global allocation.
+  // This covers loads, stores, address computations (&foo), and any other use.
+  // BUT exclude accesses to function allocations and string constants.
+  directly_accesses_mutable_global(?func) :-
+    constant_in_func(?constant, ?func),
+    operand_points_to(_, ?alloc, _, ?constant),
+    mutated_or_escaped_global(?alloc),
+    !_is_function_allocation(?alloc),
+    !_is_string_constant(?alloc).
+
+  // Base case: Functions that directly access mutable/escaped globals are in the tissue
+  mutable_global_tissue(?func) :-
+    directly_accesses_mutable_global(?func).
+
+  // Recursive case: Any function that calls a function in the tissue is also in the tissue
+  mutable_global_tissue(?caller) :-
+    mutable_global_tissue(?callee),
+    callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+    instr_func(?callerInstr, ?caller).
+}

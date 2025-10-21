@@ -341,3 +341,23 @@ subset_connected_components.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
 
 subset_connected_components.reachable_context(?ctx, ?func) :-
   subset.callgraph.reachable_context(?ctx, ?func).
+
+.init subset_mutable_global_tissue = MutableGlobalTissue
+
+subset_mutable_global_tissue.mutated_or_escaped_global(?alloc) :-
+  mutated_or_escaped_global(?alloc).
+
+subset_mutable_global_tissue.global_allocation_by_variable(?var, ?alloc) :-
+  global_allocation_by_variable(?var, ?alloc).
+
+subset_mutable_global_tissue.global_allocation_by_func(?func, ?alloc) :-
+  global_allocation_by_func(?func, ?alloc).
+
+subset_mutable_global_tissue.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
+  subset.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
+
+subset_mutable_global_tissue.reachable_context(?ctx, ?func) :-
+  subset.callgraph.reachable_context(?ctx, ?func).
+
+subset_mutable_global_tissue.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).

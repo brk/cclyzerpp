@@ -687,6 +687,23 @@ int main(int argc, char *argv[]) {
         std::cout << "  " << std::get<0>(site_tuple) << " (fully unknown)\n";
     }
 
+    // Print mutable global tissue relations
+    std::string tissue_prefix = da_str(cclyzer::datalog_analysis) + "_mutable_global_tissue";
+
+    std::cout << "\n--- Relation: " << tissue_prefix << ".directly_accesses_mutable_global ---\n";
+    auto directly_accesses_rel = pa->relationToVector<const llvm::Value *>(
+        tissue_prefix + ".directly_accesses_mutable_global", llvm_val_map);
+    for (const auto& func_tuple : directly_accesses_rel) {
+        std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
+    }
+
+    std::cout << "\n--- Relation: " << tissue_prefix << ".mutable_global_tissue ---\n";
+    auto tissue_rel = pa->relationToVector<const llvm::Value *>(
+        tissue_prefix + ".mutable_global_tissue", llvm_val_map);
+    for (const auto& func_tuple : tissue_rel) {
+        std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
+    }
+
 
     // 3. Print relation sizes
     std::cout << "Relation sizes:\n";
@@ -715,6 +732,8 @@ int main(int argc, char *argv[]) {
     std::cout << "  " << cc_prefix << ".call_site_fully_resolved: " << call_site_fully_resolved_rel.size() << "\n";
     std::cout << "  " << cc_prefix << ".call_site_partially_unknown: " << call_site_partially_unknown_rel.size() << "\n";
     std::cout << "  " << cc_prefix << ".call_site_fully_unknown: " << call_site_fully_unknown_rel.size() << "\n";
+    std::cout << "  " << tissue_prefix << ".directly_accesses_mutable_global: " << directly_accesses_rel.size() << "\n";
+    std::cout << "  " << tissue_prefix << ".mutable_global_tissue: " << tissue_rel.size() << "\n";
 
     // Write JSON output if requested
     if (!JsonOutFilename.empty()) {
@@ -865,7 +884,7 @@ int main(int argc, char *argv[]) {
                 }
                 // Escaped functions can be considered to have unknown call sites.
                 if (escaped_funcs.find(func_name) != escaped_funcs.end()) {
-                    has_unknown = true;
+                    has_external = true;
                     break;
                 }
             }
@@ -916,7 +935,36 @@ int main(int argc, char *argv[]) {
             json_file << "    }";
         }
 
-        json_file << "\n  ]\n";
+        json_file << "\n  ],\n";
+
+        // Add mutable global tissue
+        json_file << "  \"mutable_global_tissue\": {\n";
+
+        // Write directly_accesses_mutable_global
+        json_file << "    \"directly_accesses\": [\n";
+        first = true;
+        for (const auto& func_tuple : directly_accesses_rel) {
+            if (!first) {
+                json_file << ",\n";
+            }
+            json_file << "      \"" << json_escape(llvm_value_to_string(std::get<0>(func_tuple))) << "\"";
+            first = false;
+        }
+        json_file << "\n    ],\n";
+
+        // Write mutable_global_tissue
+        json_file << "    \"tissue\": [\n";
+        first = true;
+        for (const auto& func_tuple : tissue_rel) {
+            if (!first) {
+                json_file << ",\n";
+            }
+            json_file << "      \"" << json_escape(llvm_value_to_string(std::get<0>(func_tuple))) << "\"";
+            first = false;
+        }
+        json_file << "\n    ]\n";
+        json_file << "  }\n";
+
         json_file << "}\n";
         json_file.close();
 

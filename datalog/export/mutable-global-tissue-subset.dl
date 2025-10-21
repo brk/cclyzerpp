@@ -1,0 +1,6 @@
+//------------------------------------------------------------------------------
+// [Mutable Global Tissue Export - Subset Analysis]
+//------------------------------------------------------------------------------
+
+.output subset_mutable_global_tissue.directly_accesses_mutable_global (compress=true)
+.output subset_mutable_global_tissue.mutable_global_tissue (compress=true)

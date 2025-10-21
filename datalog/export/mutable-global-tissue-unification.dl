@@ -1,0 +1,6 @@
+//------------------------------------------------------------------------------
+// [Mutable Global Tissue Export - Unification Analysis]
+//------------------------------------------------------------------------------
+
+.output unification_mutable_global_tissue.directly_accesses_mutable_global (compress=true)
+.output unification_mutable_global_tissue.mutable_global_tissue (compress=true)

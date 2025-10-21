@@ -1,4 +1,5 @@
 #include "common.project"
 #include "export/unification.dl"
 #include "export/connected-components-unification.dl"
+#include "export/mutable-global-tissue-unification.dl"
 #include "points-to/unification.dl"

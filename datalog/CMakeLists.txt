@@ -31,6 +31,7 @@ set(DL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/points-to/region.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/signatures.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/escape-analysis.dl
+    ${CMAKE_CURRENT_LIST_DIR}/points-to/mutable-global-tissue.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/unification.dl
     ${CMAKE_CURRENT_LIST_DIR}/context/drop.dl
     ${CMAKE_CURRENT_LIST_DIR}/context/lift.dl
@@ -106,11 +107,16 @@ set(DL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/schema/fpext-instr.dl
     ${CMAKE_CURRENT_LIST_DIR}/schema/landingpad-instr.dl
     ${CMAKE_CURRENT_LIST_DIR}/callgraph/entry-points.dl
+    ${CMAKE_CURRENT_LIST_DIR}/callgraph/connected-components.dl
     ${CMAKE_CURRENT_LIST_DIR}/export/subset.dl
     ${CMAKE_CURRENT_LIST_DIR}/export/statistics.dl
     ${CMAKE_CURRENT_LIST_DIR}/export/unification.dl
     ${CMAKE_CURRENT_LIST_DIR}/export/debug-output.dl
     ${CMAKE_CURRENT_LIST_DIR}/export/debug-output-extended.dl
+    ${CMAKE_CURRENT_LIST_DIR}/export/connected-components-subset.dl
+    ${CMAKE_CURRENT_LIST_DIR}/export/connected-components-unification.dl
+    ${CMAKE_CURRENT_LIST_DIR}/export/mutable-global-tissue-subset.dl
+    ${CMAKE_CURRENT_LIST_DIR}/export/mutable-global-tissue-unification.dl
     ${CMAKE_CURRENT_LIST_DIR}/options/user-options.dl
     ${CMAKE_CURRENT_LIST_DIR}/import/import.project
     ${CMAKE_CURRENT_LIST_DIR}/symbol-lookup/symbol-lookup.project

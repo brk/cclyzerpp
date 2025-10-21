@@ -27,3 +27,4 @@
 #include "types.dl"
 #include "region.dl"
 #include "escape-analysis.dl"
+#include "mutable-global-tissue.dl"
