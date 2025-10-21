@@ -1,6 +1,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/flyweight.hpp>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -200,6 +201,12 @@ static llvm::cl::opt<std::string>
     InputFilename(
         llvm::cl::Positional, llvm::cl::desc("<input file>"), llvm::cl::Required);
 
+static llvm::cl::opt<std::string>
+    JsonOutFilename(
+        "json-out",
+        llvm::cl::desc("Output file for JSON results"),
+        llvm::cl::value_desc("filename"));
+
 auto factgen_module(
     llvm::Module &module,
     const fs::path &output_dir,
@@ -250,6 +257,50 @@ std::string llvm_value_to_string(const llvm::Value* val) {
         os << "nullptr";
     }
     return os.str();
+}
+
+// Helper function to escape JSON strings
+static std::string json_escape(const std::string& s) {
+    std::string result;
+    result.reserve(s.length());
+    for (char c : s) {
+        switch (c) {
+            case '"':  result += "\\\""; break;
+            case '\\': result += "\\\\"; break;
+            case '\b': result += "\\b"; break;
+            case '\f': result += "\\f"; break;
+            case '\n': result += "\\n"; break;
+            case '\r': result += "\\r"; break;
+            case '\t': result += "\\t"; break;
+            default:
+                if ('\x00' <= c && c <= '\x1f') {
+                    char buf[7];
+                    snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
+                    result += buf;
+                } else {
+                    result += c;
+                }
+        }
+    }
+    return result;
+}
+
+// Process a string to strip "*global_alloc@" prefix and filter entries starting with "."
+static std::optional<std::string> process_global_name(const std::string& name) {
+    std::string processed = name;
+
+    // Strip "*global_alloc@" prefix if present
+    const std::string prefix = "*global_alloc@";
+    if (processed.substr(0, prefix.length()) == prefix) {
+        processed = processed.substr(prefix.length());
+    }
+
+    // Filter out entries starting with "."
+    if (!processed.empty() && processed[0] == '.') {
+        return std::nullopt;
+    }
+
+    return processed;
 }
 
 int main(int argc, char *argv[]) {
@@ -516,6 +567,38 @@ int main(int argc, char *argv[]) {
     std::cout << "  mutated_or_escaped_global: " << mutated_or_escaped_rel.size() << "\n";
     std::cout << "  escaping_function_arg: " << escaping_arg_rel.size() << "\n";
     std::cout << "  func_without_defn: " << func_without_defn_rel.size() << "\n";
+
+    // Write JSON output if requested
+    if (!JsonOutFilename.empty()) {
+        std::ofstream json_file(JsonOutFilename);
+        if (!json_file) {
+            std::cerr << "Error: Failed to open JSON output file: " << JsonOutFilename << "\n";
+            return 1;
+        }
+
+        json_file << "{\n";
+        json_file << "  \"mutated_or_escaped_global\": [\n";
+
+        bool first = true;
+        for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+            std::string name = std::get<0>(alloc_tuple).get();
+            auto processed_opt = process_global_name(name);
+
+            if (processed_opt.has_value()) {
+                if (!first) {
+                    json_file << ",\n";
+                }
+                json_file << "    \"" << json_escape(processed_opt.value()) << "\"";
+                first = false;
+            }
+        }
+
+        json_file << "\n  ]\n";
+        json_file << "}\n";
+        json_file.close();
+
+        std::cout << "\nJSON output written to: " << JsonOutFilename << "\n";
+    }
 
     return 0;
 }
