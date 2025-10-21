@@ -129,6 +129,12 @@
     func_type_param(?type, ?index, ?paramType),
     pointer_type(?paramType).
 
+  // LLVM intrinsic: objectsize - pointer argument is readonly
+  // llvm.objectsize.i64.p0(ptr, ...) - arg 0 is readonly
+  known_readonly_arg(?func, 0) :-
+    func_name(?func, ?name),
+    substr(?name, 0, 18) = "@llvm.objectsize.".
+
   func_without_defn(?func) :-
     func_decl(?func),
     !func_decl_to_defn(?func, _).
