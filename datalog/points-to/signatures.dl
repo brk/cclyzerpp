@@ -55,12 +55,13 @@ func_needs_signature(?func) :-
   !(func_decl_to_defn(?func,_);
     heap_alloc_func(?func);
     "@memcpy"=substr(?name,0,7);
-    "@llvm.memcpy"=substr(?name,0,12)),
-  func_ty(?func, ?type),
-  func_type_param(?type, _, ?ptype),
-  pointer_type_has_component(?ptype, ?comp),
-  type_has_subelement(?comp, ?elem),
-  pointer_type(?elem).
+    "@llvm.memcpy"=substr(?name,0,12))
+  .
+//  func_ty(?func, ?type),
+//  func_type_param(?type, _, ?ptype),
+//  pointer_type_has_component(?ptype, ?comp),
+//  type_has_subelement(?comp, ?elem),
+//  pointer_type(?elem).
 
 func_pts_signature(?func) :-
   func_name(?func, ?name),

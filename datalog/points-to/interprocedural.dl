@@ -139,11 +139,12 @@ func_by_location(?alloc, ?callee) :-
      indirect_call_instr(?callerInstr),
      call_instr_func_operand(?callerInstr, ?funcOp),
      func_pointer_operand_points_to(?aCtx, ?funcLoc, ?callerCtx, ?funcOp),
-     func_by_location(?funcLoc, ?callee),
-     func_ty(?callee, ?actualType),
-     operand_has_type(?funcOp, ?funcOpType),
-     pointer_type_has_component(?funcOpType, ?declaredType),
-     type_compatible(?actualType, ?declaredType).
+     func_by_location(?funcLoc, ?callee)
+     .
+     // func_ty(?callee, ?actualType),
+     //operand_has_type(?funcOp, ?funcOpType),
+     //pointer_type_has_component(?funcOpType, ?declaredType),
+     //type_compatible(?actualType, ?declaredType).
 
   callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
@@ -160,11 +161,12 @@ func_by_location(?alloc, ?callee) :-
      invoke_instr(?callerInstr),
      invoke_instr_func_operand(?callerInstr, ?funcOp),
      func_pointer_operand_points_to(?aCtx, ?funcLoc, ?callerCtx, ?funcOp),
-     func_by_location(?funcLoc, ?callee),
-     func_ty(?callee, ?actualType),
-     operand_has_type(?funcOp, ?funcOpType),
-     pointer_type_has_component(?funcOpType, ?declaredType),
-     type_compatible(?actualType, ?declaredType).
+     func_by_location(?funcLoc, ?callee)
+     .
+     //func_ty(?callee, ?actualType),
+     //operand_has_type(?funcOp, ?funcOpType),
+     //pointer_type_has_component(?funcOpType, ?declaredType),
+     //type_compatible(?actualType, ?declaredType).
 
   callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
