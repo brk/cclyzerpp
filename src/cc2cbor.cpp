@@ -490,10 +490,10 @@ int main(int argc, char *argv[]) {
         std::cout << "  Function: " << llvm_value_to_string(func) << ", Arg Index: " << index << "\n";
     }
 
-    std::cout << "\n--- Relation: unknown_function ---\n";
-    auto unknown_func_rel = pa->relationToVector<const llvm::Value *>(
-        "unknown_function", llvm_val_map);
-    for (const auto& func_tuple : unknown_func_rel) {
+    std::cout << "\n--- Relation: func_without_defn ---\n";
+    auto func_without_defn_rel = pa->relationToVector<const llvm::Value *>(
+        "func_without_defn", llvm_val_map);
+    for (const auto& func_tuple : func_without_defn_rel) {
         std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
     }
 
@@ -515,7 +515,7 @@ int main(int argc, char *argv[]) {
     std::cout << "  callgraph: " << result.getCallGraph().size() << "\n";
     std::cout << "  mutated_or_escaped_global: " << mutated_or_escaped_rel.size() << "\n";
     std::cout << "  escaping_function_arg: " << escaping_arg_rel.size() << "\n";
-    std::cout << "  unknown_function: " << unknown_func_rel.size() << "\n";
+    std::cout << "  func_without_defn: " << func_without_defn_rel.size() << "\n";
 
     return 0;
 }

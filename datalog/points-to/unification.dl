@@ -502,8 +502,8 @@ mutated_or_escaped_global(?alloc) :-
 escaping_function_arg(?func, ?index) :-
   unification_escape.component_escaping_arg(?func, ?index).
 
-unknown_function(?func) :-
-  unification_escape.component_unknown_func(?func).
+func_without_defn(?func) :-
+  unification_escape.component_func_without_defn(?func).
 
 .init unification_memcpy = Memcpy
 

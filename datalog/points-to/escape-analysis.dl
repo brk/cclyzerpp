@@ -23,9 +23,9 @@
 // This is computed interprocedurally by analyzing how arguments are used
 .decl escaping_function_arg(?func: FunctionDecl, ?index: ArgumentIndex)
 
-// Helper: Functions without definitions (external/unknown)
+// Helper: Functions without definitions (external functions, declarations only)
 // All arguments to such functions are conservatively assumed to escape
-.decl unknown_function(?func: FunctionDecl)
+.decl func_without_defn(?func: FunctionDecl)
 
 .comp EscapeAnalysis {
 
@@ -54,20 +54,16 @@
   // Track which function argument positions cause escape
   .decl escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
 
-  // Track unknown/external functions
-  .decl unknown_func(?func: FunctionDecl)
-
-  //----------------------------------------------------------------------------
-  // [Unknown/External Functions]
-  //----------------------------------------------------------------------------
+  // Track functions without definitions (external/unknown functions)
+  .decl func_without_defn(?func: FunctionDecl)
 
   //----------------------------------------------------------------------------
   // [Known Read-Only Function Arguments]
   //
-  // For well-known external functions, we identify argument positions that are
-  // readonly (never mutated or escaped). This focuses on cases where mutable
-  // global variables (e.g., buffers, arrays) are commonly passed as readonly
-  // arguments.
+  // For well-known external functions (functions without definitions), we
+  // identify argument positions that are readonly (never mutated or escaped).
+  // This focuses on cases where mutable global variables (e.g., buffers,
+  // arrays) are commonly passed as readonly arguments.
   //
   // Note: We exclude string literal cases since those are immutable by C semantics.
   //----------------------------------------------------------------------------
@@ -133,13 +129,13 @@
     func_type_param(?type, ?index, ?paramType),
     pointer_type(?paramType).
 
-  unknown_func(?func) :-
+  func_without_defn(?func) :-
     func_decl(?func),
     !func_decl_to_defn(?func, _).
 
-  // Unknown functions - pointer arguments escape UNLESS marked as readonly
+  // Functions without definitions - pointer arguments escape UNLESS marked as readonly
   escaping_arg(?func, ?index) :-
-    unknown_func(?func),
+    func_without_defn(?func),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
     pointer_type(?paramType),
@@ -313,12 +309,12 @@
   .decl component_mutated_global(?alloc: GlobalAllocation)
   .decl component_escaped_alloc(?aCtx: Context, ?alloc: Allocation)
   .decl component_escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
-  .decl component_unknown_func(?func: FunctionDecl)
+  .decl component_func_without_defn(?func: FunctionDecl)
 
   component_mutated_global(?alloc) :- mutated_global(?alloc).
   component_escaped_alloc(?aCtx, ?alloc) :- escaped_alloc(?aCtx, ?alloc).
   component_escaping_arg(?func, ?index) :- escaping_arg(?func, ?index).
-  component_unknown_func(?func) :- unknown_func(?func).
+  component_func_without_defn(?func) :- func_without_defn(?func).
 }
 
 //------------------------------------------------------------------------------

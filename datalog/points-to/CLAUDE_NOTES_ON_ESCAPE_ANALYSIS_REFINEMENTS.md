@@ -88,7 +88,7 @@ Refine the escaping argument detection:
 ```datalog
 // Don't mark as escaping if parameter has nocapture attribute
 escaping_arg(?func, ?index) :-
-  unknown_func(?func),
+  func_without_defn(?func),
   func_ty(?func, ?type),
   func_type_param(?type, ?index, ?paramType),
   pointer_type(?paramType),

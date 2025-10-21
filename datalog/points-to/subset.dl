@@ -141,8 +141,8 @@ mutated_or_escaped_global(?alloc) :-
 escaping_function_arg(?func, ?index) :-
   subset_escape.component_escaping_arg(?func, ?index).
 
-unknown_function(?func) :-
-  subset_escape.component_unknown_func(?func).
+func_without_defn(?func) :-
+  subset_escape.component_func_without_defn(?func).
 
 .init subset_memcpy = Memcpy
 

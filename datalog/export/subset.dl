@@ -12,4 +12,4 @@
 .output context_to_string (compress=true)
 .output escaping_function_arg (compress=true)
 .output mutated_or_escaped_global (compress=true)
-.output unknown_function (compress=true)
+.output func_without_defn (compress=true)
