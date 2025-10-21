@@ -1,0 +1,205 @@
+//------------------------------------------------------------------------------
+// [Call Graph Connected Components]
+//
+// Computes connected components in the bipartite call graph, where edges
+// connect call sites to their target functions (treating the graph as
+// undirected). This allows identifying which call sites and functions are
+// transitively related through the call graph.
+//
+// Unknown call targets (e.g., indirect calls that cannot be resolved by
+// points-to analysis) are explicitly represented to distinguish between
+// call sites with fully-known targets and those with partially-unknown targets.
+//------------------------------------------------------------------------------
+
+// Type representing callees: either a known function or unknown
+.type Callee = FunctionDecl | symbol
+
+.comp ConnectedComponents {
+  //----------------------------------------------------------------------------
+  // Input relations (must be provided by parent context)
+  //----------------------------------------------------------------------------
+
+  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
+  .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
+
+  //----------------------------------------------------------------------------
+  // Output relations
+  //----------------------------------------------------------------------------
+
+  // Base bipartite edges from call sites to callees
+  .decl calls_target(site: CallBase, callee: Callee)
+
+//------------------------------------------------------------------------------
+// Known direct call targets
+//------------------------------------------------------------------------------
+
+  // Direct calls and invokes - these are already in callgraph_edge
+  calls_target(?callerInstr, ?callee) :-
+    callgraph_edge(_, ?callee, _, ?callerInstr).
+
+//------------------------------------------------------------------------------
+// Unknown indirect call targets
+//------------------------------------------------------------------------------
+
+  // Helper: indirect calls that have at least one points-to fact
+  .decl _indirect_call_with_pointsto(instr: CallBase)
+  _indirect_call_with_pointsto(?callerInstr) :-
+    indirect_call_instr(?callerInstr),
+    call_instr_func_operand(?callerInstr, ?funcOp),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    var_points_to(_, _, ?callerCtx, ?funcOp).
+
+  // Case 1: Indirect call with no points-to information
+  calls_target(?callerInstr, "UNKNOWN") :-
+    indirect_call_instr(?callerInstr),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    !_indirect_call_with_pointsto(?callerInstr).
+
+  // Case 2: Indirect call where points-to gives non-function allocation
+  calls_target(?callerInstr, "UNKNOWN") :-
+    indirect_call_instr(?callerInstr),
+    call_instr_func_operand(?callerInstr, ?funcOp),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    var_points_to(_, ?allocation, ?callerCtx, ?funcOp),
+    !func_by_location(?allocation, _).
+
+  // Helper: indirect invokes that have at least one points-to fact
+  .decl _indirect_invoke_with_pointsto(instr: CallBase)
+  _indirect_invoke_with_pointsto(?callerInstr) :-
+    invoke_instr(?callerInstr),
+    !direct_invoke_instr(?callerInstr),
+    invoke_instr_func_operand(?callerInstr, ?funcOp),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    var_points_to(_, _, ?callerCtx, ?funcOp).
+
+  // Case 3: Indirect invoke with no points-to information
+  calls_target(?callerInstr, "UNKNOWN") :-
+    invoke_instr(?callerInstr),
+    !direct_invoke_instr(?callerInstr),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    !_indirect_invoke_with_pointsto(?callerInstr).
+
+  // Case 4: Indirect invoke where points-to gives non-function allocation
+  calls_target(?callerInstr, "UNKNOWN") :-
+    invoke_instr(?callerInstr),
+    !direct_invoke_instr(?callerInstr),
+    invoke_instr_func_operand(?callerInstr, ?funcOp),
+    instr_func(?callerInstr, ?instrFunc),
+    reachable_context(?callerCtx, ?instrFunc),
+    var_points_to(_, ?allocation, ?callerCtx, ?funcOp),
+    !func_by_location(?allocation, _).
+
+  //----------------------------------------------------------------------------
+  // Connected Components Computation
+  //----------------------------------------------------------------------------
+
+  // Union type for nodes in the call graph (call sites or callees)
+  .type CGNode = CallBase | Callee
+
+  // Equivalence relation for connected components
+  // Using eqrel automatically handles reflexivity, symmetry, and transitivity
+  .decl call_graph_component(x: CGNode, y: CGNode) eqrel
+
+  // Add all bipartite edges to the equivalence relation
+  call_graph_component(?site, ?callee) :-
+    calls_target(?site, ?callee).
+
+  //----------------------------------------------------------------------------
+  // Component Representatives
+  //----------------------------------------------------------------------------
+
+  // Find the canonical representative for each component
+  // (lexicographically smallest node)
+  .decl component_representative(node: CGNode, repr: CGNode)
+
+  // Helper to check if a node is smallest in its component
+  .decl _is_smallest_in_component(node: CGNode)
+  _is_smallest_in_component(?node) :-
+    call_graph_component(?node, _),
+    !_has_smaller_in_component(?node).
+
+  .decl _has_smaller_in_component(node: CGNode)
+  _has_smaller_in_component(?node) :-
+    call_graph_component(?node, ?other),
+    ?other < ?node.
+
+  component_representative(?node, ?repr) :-
+    call_graph_component(?node, ?repr),
+    _is_smallest_in_component(?repr).
+
+  //----------------------------------------------------------------------------
+  // Component Statistics
+  //----------------------------------------------------------------------------
+
+  // Count the size of each component
+  .decl component_size(repr: CGNode, size: number)
+
+  component_size(?repr, ?size) :-
+    component_representative(?repr, ?repr),
+    ?size = count : { call_graph_component(?repr, _) }.
+
+  // Count call sites per component
+  .decl component_call_site_count(repr: CGNode, num: number)
+
+  component_call_site_count(?repr, ?num) :-
+    component_representative(?repr, ?repr),
+    ?num = count : {
+      call_graph_component(?repr, ?site),
+      call_instr(?site)
+    } + count : {
+      call_graph_component(?repr, ?site),
+      invoke_instr(?site)
+    }.
+
+  // Count callees per component (including UNKNOWN)
+  .decl component_callee_count(repr: CGNode, num: number)
+
+  component_callee_count(?repr, ?num) :-
+    component_representative(?repr, ?repr),
+    ?num = count : {
+      call_graph_component(?repr, ?callee),
+      func_decl(?callee)
+    } + count : {
+      call_graph_component(?repr, "UNKNOWN")
+    }.
+
+  // Identify components containing unknown targets
+  .decl component_has_unknown_target(repr: CGNode)
+
+  component_has_unknown_target(?repr) :-
+    component_representative(?repr, ?repr),
+    call_graph_component(?repr, "UNKNOWN").
+
+  //----------------------------------------------------------------------------
+  // Per-Call-Site Analysis
+  //----------------------------------------------------------------------------
+
+  // Classify call sites by their target resolution status
+  .decl call_site_fully_resolved(site: CallBase)
+  .decl call_site_partially_unknown(site: CallBase)
+  .decl call_site_fully_unknown(site: CallBase)
+
+  // Fully resolved: has at least one known target, no unknown
+  call_site_fully_resolved(?site) :-
+    calls_target(?site, ?callee),
+    func_decl(?callee),
+    !calls_target(?site, "UNKNOWN").
+
+  // Partially unknown: has both known and unknown targets
+  call_site_partially_unknown(?site) :-
+    calls_target(?site, ?callee),
+    func_decl(?callee),
+    calls_target(?site, "UNKNOWN").
+
+  // Fully unknown: only has unknown target
+  call_site_fully_unknown(?site) :-
+    calls_target(?site, "UNKNOWN"),
+    !calls_target(?site, ?callee),
+    func_decl(?callee).
+}

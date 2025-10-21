@@ -1,3 +1,4 @@
 #include "common.project"
 #include "export/subset.dl"
+#include "export/connected-components-subset.dl"
 #include "points-to/subset.dl"

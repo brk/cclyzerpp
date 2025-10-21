@@ -716,3 +716,14 @@ alloc_region(?alloc, "heap") :-
   unification.type_indication.heap_allocation_by_type_instr(_, _, ?alloc).
 alloc_region(?alloc, "heap") :-
   unification_signatures.sig_allocation_type(?alloc, _).
+
+.init unification_connected_components = ConnectedComponents
+
+unification_connected_components.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+
+unification_connected_components.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
+  unification.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
+
+unification_connected_components.reachable_context(?ctx, ?func) :-
+  unification.callgraph.reachable_context(?ctx, ?func).

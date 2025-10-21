@@ -1,0 +1,21 @@
+//------------------------------------------------------------------------------
+// [Call Graph Connected Components Export - Unification Analysis]
+//------------------------------------------------------------------------------
+
+// Base bipartite edges
+.output unification_connected_components.calls_target (compress=true)
+
+// Connected components relation
+.output unification_connected_components.call_graph_component (compress=true)
+
+// Component representatives and statistics
+.output unification_connected_components.component_representative (compress=true)
+.output unification_connected_components.component_size (compress=true)
+.output unification_connected_components.component_call_site_count (compress=true)
+.output unification_connected_components.component_callee_count (compress=true)
+.output unification_connected_components.component_has_unknown_target (compress=true)
+
+// Call site classification
+.output unification_connected_components.call_site_fully_resolved (compress=true)
+.output unification_connected_components.call_site_partially_unknown (compress=true)
+.output unification_connected_components.call_site_fully_unknown (compress=true)

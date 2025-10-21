@@ -607,6 +607,86 @@ int main(int argc, char *argv[]) {
         std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
     }
 
+    // Print connected components relations
+    std::string cc_prefix = da_str(cclyzer::datalog_analysis) + "_connected_components";
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".calls_target ---\n";
+    auto calls_target_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        boost::flyweight<std::string>>(
+        cc_prefix + ".calls_target", llvm_val_map);
+    for (const auto& [call_site, callee] : calls_target_rel) {
+        std::cout << "  " << call_site << " -> " << callee << "\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".component_representative ---\n";
+    auto component_repr_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        boost::flyweight<std::string>>(
+        cc_prefix + ".component_representative", llvm_val_map);
+    for (const auto& [node, repr] : component_repr_rel) {
+        std::cout << "  " << node << " => " << repr << "\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".component_size ---\n";
+    auto component_size_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        int>(
+        cc_prefix + ".component_size", llvm_val_map);
+    for (const auto& [repr, size] : component_size_rel) {
+        std::cout << "  Component " << repr << ": " << size << " nodes\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".component_call_site_count ---\n";
+    auto component_call_site_count_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        int>(
+        cc_prefix + ".component_call_site_count", llvm_val_map);
+    for (const auto& [repr, count] : component_call_site_count_rel) {
+        std::cout << "  Component " << repr << ": " << count << " call sites\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".component_callee_count ---\n";
+    auto component_callee_count_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        int>(
+        cc_prefix + ".component_callee_count", llvm_val_map);
+    for (const auto& [repr, count] : component_callee_count_rel) {
+        std::cout << "  Component " << repr << ": " << count << " callees\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".component_has_unknown_target ---\n";
+    auto component_has_unknown_rel = pa->relationToVector<
+        boost::flyweight<std::string>>(
+        cc_prefix + ".component_has_unknown_target", llvm_val_map);
+    for (const auto& repr_tuple : component_has_unknown_rel) {
+        std::cout << "  Component " << std::get<0>(repr_tuple) << " has UNKNOWN targets\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".call_site_fully_resolved ---\n";
+    auto call_site_fully_resolved_rel = pa->relationToVector<
+        boost::flyweight<std::string>>(
+        cc_prefix + ".call_site_fully_resolved", llvm_val_map);
+    for (const auto& site_tuple : call_site_fully_resolved_rel) {
+        std::cout << "  " << std::get<0>(site_tuple) << " (fully resolved)\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".call_site_partially_unknown ---\n";
+    auto call_site_partially_unknown_rel = pa->relationToVector<
+        boost::flyweight<std::string>>(
+        cc_prefix + ".call_site_partially_unknown", llvm_val_map);
+    for (const auto& site_tuple : call_site_partially_unknown_rel) {
+        std::cout << "  " << std::get<0>(site_tuple) << " (partially unknown)\n";
+    }
+
+    std::cout << "\n--- Relation: " << cc_prefix << ".call_site_fully_unknown ---\n";
+    auto call_site_fully_unknown_rel = pa->relationToVector<
+        boost::flyweight<std::string>>(
+        cc_prefix + ".call_site_fully_unknown", llvm_val_map);
+    for (const auto& site_tuple : call_site_fully_unknown_rel) {
+        std::cout << "  " << std::get<0>(site_tuple) << " (fully unknown)\n";
+    }
+
 
     // 3. Print relation sizes
     std::cout << "Relation sizes:\n";
@@ -626,6 +706,15 @@ int main(int argc, char *argv[]) {
     std::cout << "  mutated_or_escaped_global: " << mutated_or_escaped_rel.size() << "\n";
     std::cout << "  escaping_function_arg: " << escaping_arg_rel.size() << "\n";
     std::cout << "  func_without_defn: " << func_without_defn_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".calls_target: " << calls_target_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".component_representative: " << component_repr_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".component_size: " << component_size_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".component_call_site_count: " << component_call_site_count_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".component_callee_count: " << component_callee_count_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".component_has_unknown_target: " << component_has_unknown_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".call_site_fully_resolved: " << call_site_fully_resolved_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".call_site_partially_unknown: " << call_site_partially_unknown_rel.size() << "\n";
+    std::cout << "  " << cc_prefix << ".call_site_fully_unknown: " << call_site_fully_unknown_rel.size() << "\n";
 
     // Write JSON output if requested
     if (!JsonOutFilename.empty()) {

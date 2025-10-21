@@ -330,3 +330,14 @@ alloc_region(?alloc, "heap") :-
   subset_signatures.sig_allocation_type(?alloc, _).
 alloc_region(?alloc, "stack") :-
   subset.type_indication.stack_allocation_by_type_instr(_, _, ?alloc).
+
+.init subset_connected_components = ConnectedComponents
+
+subset_connected_components.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+
+subset_connected_components.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
+  subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
+
+subset_connected_components.reachable_context(?ctx, ?func) :-
+  subset.callgraph.reachable_context(?ctx, ?func).

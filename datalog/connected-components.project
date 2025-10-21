@@ -1,0 +1,3 @@
+#include "common.project"
+#include "callgraph/connected-components.dl"
+#include "export/connected-components.dl"

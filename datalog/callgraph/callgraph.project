@@ -1,1 +1,2 @@
 #include "entry-points.dl"
+#include "connected-components.dl"
