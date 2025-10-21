@@ -566,6 +566,12 @@ void InstructionVisitor::visitLandingPadInst(const llvm::LandingPadInst &LI) {
 }
 
 void InstructionVisitor::visitCallInst(const llvm::CallInst &CI) {
+  // Skip debug intrinsics - they should not be treated as regular function calls
+  // that affect callgraph and points-to analysis
+  if (isa<llvm::DbgInfoIntrinsic>(CI)) {
+    return;
+  }
+
   refmode_t iref = recordInstruction(pred::call::instr, CI);
 
   // Call instructions are now divided into direct call instructions
@@ -604,8 +610,8 @@ void InstructionVisitor::visitCallInst(const llvm::CallInst &CI) {
 }
 
 void InstructionVisitor::visitDbgDeclareInst(const llvm::DbgDeclareInst &DDI) {
-  // First visit it as a generic call instruction
-  InstructionVisitor::visitCallInst(static_cast<const llvm::CallInst &>(DDI));
+  // Debug intrinsics should not be treated as regular call instructions.
+  // Extract debug information only.
 
   // TODO Move the entire debug location logic to debuginfo_Variables.cpp
   const llvm::Value *address = DDI.getAddress();
