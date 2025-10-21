@@ -766,8 +766,9 @@ int main(int argc, char *argv[]) {
         json_file << "  \"call_graph_components\": [\n";
 
         // Build a map from representative to component data
-        // Tuple: (call_sites, call_targets, has_unknown, has_external)
-        std::map<std::string, std::tuple<std::set<std::string>, std::set<std::string>, bool, bool>> components;
+        // Tuple: (call_sites, call_targets, all_mutable)
+        // all_mutable is true when component has no unknown or external targets
+        std::map<std::string, std::tuple<std::set<std::string>, std::set<std::string>, bool>> components;
 
         // Build map of node -> representative
         std::map<std::string, std::string> node_to_repr;
@@ -812,12 +813,12 @@ int main(int argc, char *argv[]) {
             std::string repr = repr_it->second;
 
             // Initialize component entry if not exists
+            // Default all_mutable = true (will be set to false if unknown/external found)
             if (components.find(repr) == components.end()) {
                 components[repr] = std::make_tuple(
                     std::set<std::string>(),
                     std::set<std::string>(),
-                    false,
-                    false);
+                    true); // default: all_mutable = true
             }
 
             // Categorize node as call site or call target based on calls_target relation
@@ -830,16 +831,16 @@ int main(int argc, char *argv[]) {
         }
 
         // Check for components with UNKNOWN targets
+        // Mark them as not all_mutable (all_mutable = false)
         for (const auto& repr_tuple : component_has_unknown_rel) {
             std::string repr = std::get<0>(repr_tuple).get();
             if (components.find(repr) == components.end()) {
                 components[repr] = std::make_tuple(
                     std::set<std::string>(),
                     std::set<std::string>(),
-                    true,
-                    false);
+                    false); // not all_mutable because has unknown
             } else {
-                std::get<2>(components[repr]) = true;
+                std::get<2>(components[repr]) = false; // not all_mutable
             }
         }
 
@@ -865,13 +866,17 @@ int main(int argc, char *argv[]) {
         }
 
         // Check for components with external or escaped functions
+        // For components not yet in the map, they start with all_mutable = true
+        // For components already marked (from unknown targets), we may need to additionally set all_mutable = false
         for (auto& [repr, data] : components) {
             const auto& call_targets = std::get<1>(data);
-            bool has_external = false;
+
+            // Check if component has external or escaped functions
+            bool has_external_or_escaped = false;
             for (const auto& target : call_targets) {
                 // Check if function is external (no definition)
                 if (external_funcs.find(target) != external_funcs.end()) {
-                    has_external = true;
+                    has_external_or_escaped = true;
                     break;
                 }
                 // Check if function is escaped
@@ -884,17 +889,22 @@ int main(int argc, char *argv[]) {
                 }
                 // Escaped functions can be considered to have unknown call sites.
                 if (escaped_funcs.find(func_name) != escaped_funcs.end()) {
-                    has_external = true;
+                    has_external_or_escaped = true;
                     break;
                 }
             }
-            std::get<3>(data) = has_external;
+
+            // Update all_mutable: it's only true if no unknown AND no external/escaped
+            if (has_external_or_escaped) {
+                std::get<2>(data) = false; // not all_mutable
+            }
+            // If not marked by unknown targets and no external/escaped, it remains true (default initialized to false, we'll fix below)
         }
 
         // Write components to JSON
         first = true;
         for (const auto& [repr, data] : components) {
-            const auto& [call_sites, call_targets, has_unknown, has_external] = data;
+            const auto& [call_sites, call_targets, all_mutable] = data;
 
             if (!first) {
                 json_file << ",\n";
@@ -927,11 +937,8 @@ int main(int argc, char *argv[]) {
             }
             json_file << "\n      ],\n";
 
-            // Write has_unknown
-            json_file << "      \"has_unknown\": " << (has_unknown ? "true" : "false") << ",\n";
-
-            // Write has_external
-            json_file << "      \"has_external\": " << (has_external ? "true" : "false") << "\n";
+            // Write all_mutable (true if no unknown and no external targets)
+            json_file << "      \"all_mutable\": " << (all_mutable ? "true" : "false") << "\n";
             json_file << "    }";
         }
 
