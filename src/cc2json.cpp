@@ -577,10 +577,12 @@ int main(int argc, char *argv[]) {
 
     std::cout << "\n--- Relation: callgraph ---\n";
     for (const auto& entry : result.getCallGraph()) {
-        std::cout << "  Key: " << llvm_value_to_string(entry.first) << ", Value: ("
+        std::cout << "  Key: " << llvm_value_to_string(entry.first) << "\n";
+        std::cout << ", Value: ("
                   << std::get<0>(entry.second) << ", "
                   << std::get<1>(entry.second) << ", "
                   << llvm_value_to_string(std::get<2>(entry.second)) << ")\n";
+        std::cout << "\n";
     }
 
     // Print escape analysis relations
@@ -595,7 +597,7 @@ int main(int argc, char *argv[]) {
     auto escaping_arg_rel = pa->relationToVector<const llvm::Value *, int>(
         "escaping_function_arg", llvm_val_map);
     for (const auto& [func, index] : escaping_arg_rel) {
-        std::cout << "  Function: " << llvm_value_to_string(func) << ", Arg Index: " << index << "\n";
+        std::cout << "  Arg Index: " << index << ", Function: " << llvm_value_to_string(func) << "\n";
     }
 
     std::cout << "\n--- Relation: func_without_defn ---\n";
