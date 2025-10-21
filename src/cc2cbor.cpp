@@ -303,6 +303,30 @@ static std::optional<std::string> process_global_name(const std::string& name) {
     return processed;
 }
 
+// Check if an alias entry is trivial (X,X) or (X[0], X)
+static bool is_trivial_alias(const std::string& alloc1, const std::string& alloc2) {
+    if (alloc1 == alloc2) {
+        return true;
+    }
+
+    // Check if alloc1 is alloc2[0] or alloc2 is alloc1[0]
+    if (alloc1.length() > 3 && alloc1.substr(alloc1.length() - 3) == "[0]") {
+        std::string base1 = alloc1.substr(0, alloc1.length() - 3);
+        if (base1 == alloc2) {
+            return true;
+        }
+    }
+
+    if (alloc2.length() > 3 && alloc2.substr(alloc2.length() - 3) == "[0]") {
+        std::string base2 = alloc2.substr(0, alloc2.length() - 3);
+        if (base2 == alloc1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int main(int argc, char *argv[]) {
     llvm::cl::ParseCommandLineOptions(argc, argv, "cclyzer++ standalone analysis\n");
 
@@ -457,18 +481,34 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "\n--- Relation: alloc_may_alias ---\n";
+    size_t may_alias_elided = 0;
     for (const auto& entry : result.getAllocMayAlias()) {
-        std::cout << "  " << std::get<0>(entry) << ", "
-                  << std::get<1>(entry) << ", "
-                  << std::get<2>(entry) << "\n";
+        std::string alloc1 = std::get<1>(entry).get();
+        std::string alloc2 = std::get<2>(entry).get();
+        if (!is_trivial_alias(alloc1, alloc2)) {
+            std::cout << "  " << std::get<0>(entry) << ", "
+                      << std::get<1>(entry) << ", "
+                      << std::get<2>(entry) << "\n";
+        } else {
+            may_alias_elided++;
+        }
     }
+    std::cout << "  (" << may_alias_elided << " trivial entries elided)\n";
 
     std::cout << "\n--- Relation: alloc_must_alias ---\n";
+    size_t must_alias_elided = 0;
     for (const auto& entry : result.getAllocMustAlias()) {
-        std::cout << "  " << std::get<0>(entry) << ", "
-                  << std::get<1>(entry) << ", "
-                  << std::get<2>(entry) << "\n";
+        std::string alloc1 = std::get<1>(entry).get();
+        std::string alloc2 = std::get<2>(entry).get();
+        if (!is_trivial_alias(alloc1, alloc2)) {
+            std::cout << "  " << std::get<0>(entry) << ", "
+                      << std::get<1>(entry) << ", "
+                      << std::get<2>(entry) << "\n";
+        } else {
+            must_alias_elided++;
+        }
     }
+    std::cout << "  (" << must_alias_elided << " trivial entries elided)\n";
 
     std::cout << "\n--- Relation: alloc_subregion ---\n";
     for (const auto& entry : result.getAllocSubregion()) {
