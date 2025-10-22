@@ -138,8 +138,8 @@ mutated_or_escaped_global(?alloc) :-
   empty_alloc_context(?aCtx),
   subset_escape.component_escaped_alloc(?aCtx, ?alloc).
 
-escaping_function_arg(?func, ?index) :-
-  subset_escape.component_escaping_arg(?func, ?index).
+escaping_function_arg(?func, ?index, ?reason) :-
+  subset_escape.component_escaping_arg(?func, ?index, ?reason).
 
 func_without_defn(?func) :-
   subset_escape.component_func_without_defn(?func).

@@ -21,7 +21,8 @@
 
 // Helper: Which function argument positions cause values to escape
 // This is computed interprocedurally by analyzing how arguments are used
-.decl escaping_function_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+// The ?reason parameter identifies why the argument escapes (see EscapeAnalysis component for codes)
+.decl escaping_function_arg(?func: FunctionDecl, ?index: ArgumentIndex, ?reason: number)
 
 // Helper: Functions without definitions (external functions, declarations only)
 // All arguments to such functions are conservatively assumed to escape
@@ -52,7 +53,15 @@
   .decl mutated_global(?alloc: GlobalAllocation)
 
   // Track which function argument positions cause escape
-  .decl escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+  // The ?reason parameter identifies why the argument escapes:
+  //   0 = external function (no definition)
+  //   1 = returned from function (direct)
+  //   2 = returned from function (points-to)
+  //   3 = stored to global
+  //   4 = stored to escaped memory
+  //   5 = passed to escaping function (call)
+  //   6 = passed to escaping function (invoke)
+  .decl escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex, ?reason: number)
 
   // Track functions without definitions (external/unknown functions)
   .decl func_without_defn(?func: FunctionDecl)
@@ -74,24 +83,24 @@
   // Common pattern: copying from global buffers
   known_readonly_arg(?func, 1) :-
     func_name(?func, ?name),
-    ( ?name = "@memcpy"    // memcpy(dest, src, n) - arg 1 (src) is readonly
-    ; ?name = "@memmove"   // memmove(dest, src, n) - arg 1 (src) is readonly
+    ( contains("memcpy", ?name)    // memcpy(dest, src, n) - arg 1 (src) is readonly
+    ; contains("memmove", ?name)   // memmove(dest, src, n) - arg 1 (src) is readonly
     ).
 
   // LLVM intrinsics for memory operations - source argument is readonly
   // LLVM often lowers memcpy/memmove to intrinsics with type-specific names
   known_readonly_arg(?func, 1) :-
     func_name(?func, ?name),
-    ( substr(?name, 0, 16) = "@llvm.memcpy.p0"    // @llvm.memcpy.p0.p0.i64, etc.
-    ; substr(?name, 0, 17) = "@llvm.memmove.p0"   // @llvm.memmove.p0.p0.i64, etc.
+    ( contains("llvm.memcpy.p0", ?name)    // llvm.memcpy.p0.p0.i64, etc.
+    ; contains("llvm.memmove.p0", ?name)   // llvm.memmove.p0.p0.i64, etc.
     ).
 
   // Memory search functions - all pointer arguments are readonly
   // Common pattern: searching in global buffers
   known_readonly_arg(?func, ?index) :-
     func_name(?func, ?name),
-    ( ?name = "@memchr"   // memchr(ptr, val, size) - arg 0 is readonly
-    ; ?name = "@memcmp"   // memcmp(ptr1, ptr2, size) - args 0,1 are readonly
+    ( contains("memchr", ?name)   // memchr(ptr, val, size) - arg 0 is readonly
+    ; contains("memcmp", ?name)   // memcmp(ptr1, ptr2, size) - args 0,1 are readonly
     ),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
@@ -100,30 +109,31 @@
   // Binary search - array argument is readonly
   // bsearch(key, array, count, size, compar) - args 0,1 are readonly
   known_readonly_arg(?func, ?index) :-
-    func_name(?func, "@bsearch"),
+    func_name(?func, ?name),
+    contains("bsearch", ?name),
     (?index = 0 ; ?index = 1).
 
   // String copy functions - source argument is readonly
   // Common pattern: copying from global string buffers
   known_readonly_arg(?func, 1) :-
     func_name(?func, ?name),
-    ( ?name = "@strcpy"    // strcpy(dest, src) - arg 1 (src) is readonly
-    ; ?name = "@strncpy"   // strncpy(dest, src, n) - arg 1 (src) is readonly
+    ( contains("strcpy", ?name)    // strcpy(dest, src) - arg 1 (src) is readonly
+    ; contains("strncpy", ?name)   // strncpy(dest, src, n) - arg 1 (src) is readonly
     ).
 
   // String search/comparison - all pointer arguments are readonly
   // Common pattern: searching or comparing global buffers/strings
   known_readonly_arg(?func, ?index) :-
     func_name(?func, ?name),
-    ( ?name = "@strlen"
-    ; ?name = "@strcmp"
-    ; ?name = "@strncmp"
-    ; ?name = "@strchr"
-    ; ?name = "@strrchr"
-    ; ?name = "@strstr"
-    ; ?name = "@strcspn"
-    ; ?name = "@strspn"
-    ; ?name = "@strpbrk"
+    ( contains("strlen", ?name)
+    ; contains("strcmp", ?name)
+    ; contains("strncmp", ?name)
+    ; contains("strchr", ?name)
+    ; contains("strrchr", ?name)
+    ; contains("strstr", ?name)
+    ; contains("strcspn", ?name)
+    ; contains("strspn", ?name)
+    ; contains("strpbrk", ?name)
     ),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
@@ -133,14 +143,15 @@
   // llvm.objectsize.i64.p0(ptr, ...) - arg 0 is readonly
   known_readonly_arg(?func, 0) :-
     func_name(?func, ?name),
-    substr(?name, 0, 18) = "@llvm.objectsize.".
+    contains("llvm.objectsize.", ?name).
 
   func_without_defn(?func) :-
     func_decl(?func),
     !func_decl_to_defn(?func, _).
 
   // Functions without definitions - pointer arguments escape UNLESS marked as readonly
-  escaping_arg(?func, ?index) :-
+  // Reason 0: external function (no definition)
+  escaping_arg(?func, ?index, 0) :-
     func_without_defn(?func),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
@@ -202,18 +213,20 @@
   //----------------------------------------------------------------------------
   // [Escape via Function Arguments]
   //
-  // Case 2: Argument is returned from the function
+  // Case 1: Argument is returned from the function (direct)
   // If a parameter flows to a return value, that argument position escapes
   //----------------------------------------------------------------------------
 
-  escaping_arg(?callee, ?index) :-
+  // Reason 1: returned from function (direct)
+  escaping_arg(?callee, ?index, 1) :-
     func(?callee),
     func_param(?callee, ?index, ?param),
     func_returns_value(?retValue, ?callee),
     // Simple data flow: parameter is directly returned
     ?param = ?retValue.
 
-  escaping_arg(?callee, ?index) :-
+  // Reason 2: returned from function (points-to)
+  escaping_arg(?callee, ?index, 2) :-
     func(?callee),
     func_param(?callee, ?index, ?param),
     func_returns_value(?retValue, ?callee),
@@ -222,8 +235,9 @@
     var_points_to(?aCtx, ?alloc, ?ctx, ?param),
     operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
 
-  // Case 3: Argument is stored to a global
-  escaping_arg(?callee, ?index) :-
+  // Case 2: Argument is stored to a global
+  // Reason 3: stored to global
+  escaping_arg(?callee, ?index, 3) :-
     func(?callee),
     func_param(?callee, ?index, ?param),
     reachable_context(?ctx, ?callee),
@@ -238,8 +252,9 @@
     operand_points_to(?globalCtx, ?globalAlloc, ?ctx, ?storeAddr),
     global_allocation(?globalAlloc).
 
-  // Case 4: Argument is stored to already-escaped memory
-  escaping_arg(?callee, ?index) :-
+  // Case 3: Argument is stored to already-escaped memory
+  // Reason 4: stored to escaped memory
+  escaping_arg(?callee, ?index, 4) :-
     func(?callee),
     func_param(?callee, ?index, ?param),
     reachable_context(?ctx, ?callee),
@@ -253,8 +268,9 @@
     operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?storeAddr),
     escaped_alloc(?addrCtx, ?addrAlloc).
 
-  // Case 5: Argument is passed to another escaping function (call instruction)
-  escaping_arg(?caller, ?callerIndex) :-
+  // Case 4: Argument is passed to another escaping function (call instruction)
+  // Reason 5: passed to escaping function (call)
+  escaping_arg(?caller, ?callerIndex, 5) :-
     func(?caller),
     func_param(?caller, ?callerIndex, ?param),
     reachable_context(?callerCtx, ?caller),
@@ -264,12 +280,13 @@
     // The parameter flows to the call argument
     var_points_to(?aCtx, ?alloc, ?callerCtx, ?param),
     operand_points_to(?aCtx, ?alloc, ?callerCtx, ?argValue),
-    // The callee's argument position escapes
+    // The callee's argument position escapes (for any reason)
     call_instr_fn_target(?callInstr, ?callee),
-    escaping_arg(?callee, ?calleeIndex).
+    escaping_arg(?callee, ?calleeIndex, _).
 
   // Case 5: Argument is passed to another escaping function (invoke instruction)
-  escaping_arg(?caller, ?callerIndex) :-
+  // Reason 6: passed to escaping function (invoke)
+  escaping_arg(?caller, ?callerIndex, 6) :-
     func(?caller),
     func_param(?caller, ?callerIndex, ?param),
     reachable_context(?callerCtx, ?caller),
@@ -279,9 +296,9 @@
     // The parameter flows to the call argument
     var_points_to(?aCtx, ?alloc, ?callerCtx, ?param),
     operand_points_to(?aCtx, ?alloc, ?callerCtx, ?argValue),
-    // The callee's argument position escapes
+    // The callee's argument position escapes (for any reason)
     invoke_instr_fn_target(?callInstr, ?callee),
-    escaping_arg(?callee, ?calleeIndex).
+    escaping_arg(?callee, ?calleeIndex, _).
 
   //----------------------------------------------------------------------------
   // [Interprocedural Escape via Function Calls]
@@ -291,7 +308,7 @@
 
   escaped_alloc(?aCtx, ?alloc) :-
     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
-    escaping_arg(?callee, ?index),
+    escaping_arg(?callee, ?index, _), // any reason
     actual_arg(?callerInstr, ?index, ?arg),
     operand_points_to(?aCtx, ?alloc, ?callerCtx, ?arg).
 
@@ -314,12 +331,12 @@
 
   .decl component_mutated_global(?alloc: GlobalAllocation)
   .decl component_escaped_alloc(?aCtx: Context, ?alloc: Allocation)
-  .decl component_escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+  .decl component_escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex, ?reason: number)
   .decl component_func_without_defn(?func: FunctionDecl)
 
   component_mutated_global(?alloc) :- mutated_global(?alloc).
   component_escaped_alloc(?aCtx, ?alloc) :- escaped_alloc(?aCtx, ?alloc).
-  component_escaping_arg(?func, ?index) :- escaping_arg(?func, ?index).
+  component_escaping_arg(?func, ?index, ?reason) :- escaping_arg(?func, ?index, ?reason).
   component_func_without_defn(?func) :- func_without_defn(?func).
 }
 

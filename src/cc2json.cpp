@@ -594,10 +594,10 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "\n--- Relation: escaping_function_arg ---\n";
-    auto escaping_arg_rel = pa->relationToVector<const llvm::Value *, int>(
+    auto escaping_arg_rel = pa->relationToVector<const llvm::Value *, int, int>(
         "escaping_function_arg", llvm_val_map);
-    for (const auto& [func, index] : escaping_arg_rel) {
-        std::cout << "  Arg Index: " << index << ", Function: " << llvm_value_to_string(func) << "\n";
+    for (const auto& [func, index, reason] : escaping_arg_rel) {
+        std::cout << "  Arg Index: " << index << ", Reason: " << reason << ", Function: " << llvm_value_to_string(func) << "\n";
     }
 
     std::cout << "\n--- Relation: func_without_defn ---\n";
