@@ -80,7 +80,7 @@ add_library(
 target_compile_features(SoufflePAObject PUBLIC cxx_std_17)
 set_target_properties(SoufflePAObject PROPERTIES POSITION_INDEPENDENT_CODE True)
 
-#set(SOUFFLE_COMPILE_FLAGS -fopenmp)
+set(SOUFFLE_COMPILE_FLAGS -fopenmp)
 
 # This build takes an especially long time with any optimization level above
 # -O0, but high optimization levels have an outsized (positive) impact on
@@ -108,7 +108,7 @@ target_compile_features(SoufflePA PUBLIC cxx_std_17)
 # TODO(#113): -Werror=deprecated-declarations
 target_compile_options(
   SoufflePA
-  PUBLIC # -fopenmp
+  PUBLIC -fopenmp
          #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
@@ -166,7 +166,7 @@ endif()
 # Warnings
 target_compile_options(
   PAPass
-  PUBLIC #-fopenmp
+  PUBLIC -fopenmp
          #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
@@ -282,6 +282,7 @@ target_compile_definitions(cc2json PRIVATE USE_LIBZ)
 if(NOT LLVM_ENABLE_RTTI)
   target_compile_options(cc2json PRIVATE -fno-rtti)
 endif()
+target_link_options(cc2json PRIVATE -fopenmp)
 
 # -----------------------------------------------------------------------------
 
