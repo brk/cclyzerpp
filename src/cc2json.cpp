@@ -257,12 +257,11 @@ std::string llvm_value_to_string(const llvm::Value* val) {
     if (const auto* func = llvm::dyn_cast<llvm::Function>(val)) {
         std::string str;
         llvm::raw_string_ostream os(str);
-        // Print just the function signature/name, not the body
-        os << func->getReturnType() << " @" << func->getName() << "(";
+        os << *(func->getReturnType()) << " @" << func->getName() << "(";
         bool first = true;
         for (const auto& arg : func->args()) {
             if (!first) os << ", ";
-            os << arg.getType();
+            os << *(arg.getType());
             first = false;
         }
         os << ")";
