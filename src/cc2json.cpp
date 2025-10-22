@@ -248,13 +248,15 @@ static auto da_str(Analysis which) -> std::string {
 }
 
 // Helper function to convert llvm::Value* to string, printing only function names for functions
-std::string llvm_value_to_string(const llvm::Value* val) {
+std::string llvm_value_to_string(const llvm::Value* val, bool show_func_sig = false) {
     if (!val) {
         return "nullptr";
     }
 
     // Check if this is a function
     if (const auto* func = llvm::dyn_cast<llvm::Function>(val)) {
+        if (!show_func_sig) { return std::string(func->getName()); }
+
         std::string str;
         llvm::raw_string_ostream os(str);
         os << *(func->getReturnType()) << " @" << func->getName() << "(";
