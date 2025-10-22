@@ -25,8 +25,8 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 
-find_package(Boost 1.71 REQUIRED COMPONENTS filesystem program_options
-                                            iostreams)
+find_package(Boost 1.71 CONFIG REQUIRED
+  COMPONENTS filesystem program_options iostreams)
 
 find_package(OpenMP)
 
