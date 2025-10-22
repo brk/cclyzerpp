@@ -1,5 +1,5 @@
-# minimum version: 3.12 for CMAKE_PROJECT_VERSION
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+# minimum version: 3.17 for updated OpenMP handling
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 project(cclyzer++ LANGUAGES C CXX VERSION 0.7.0)
 
@@ -28,7 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 find_package(Boost 1.71 CONFIG REQUIRED
   COMPONENTS filesystem program_options iostreams)
 
-find_package(OpenMP)
+find_package(OpenMP COMPONENTS CXX)
 
 # Allow these to be overriden at the command line:
 if(NOT (DEFINED SOUFFLE_BIN))
@@ -80,8 +80,6 @@ add_library(
 target_compile_features(SoufflePAObject PUBLIC cxx_std_17)
 set_target_properties(SoufflePAObject PROPERTIES POSITION_INDEPENDENT_CODE True)
 
-set(SOUFFLE_COMPILE_FLAGS -fopenmp)
-
 # This build takes an especially long time with any optimization level above
 # -O0, but high optimization levels have an outsized (positive) impact on
 # performance.
@@ -100,7 +98,7 @@ add_library(SoufflePA SHARED ${CMAKE_CURRENT_LIST_DIR}/src/PAInterface.cpp
 
 target_link_libraries(
   SoufflePA PRIVATE Boost::filesystem Boost::program_options
-                    Boost::iostreams ${OpenMP_CXX_LIBRARIES})
+                    Boost::iostreams OpenMP::OpenMP_CXX)
 
 # Use C++17 to compile our pass (i.e., supply -std=c++17).
 target_compile_features(SoufflePA PUBLIC cxx_std_17)
@@ -108,7 +106,7 @@ target_compile_features(SoufflePA PUBLIC cxx_std_17)
 # TODO(#113): -Werror=deprecated-declarations
 target_compile_options(
   SoufflePA
-  PUBLIC -fopenmp
+  PUBLIC
          #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
@@ -166,7 +164,7 @@ endif()
 # Warnings
 target_compile_options(
   PAPass
-  PUBLIC -fopenmp
+  PUBLIC
          #-Werror
          -Weverything
          -Wno-c++98-c++11-compat-pedantic
@@ -199,7 +197,7 @@ target_include_directories(
 target_link_libraries(
   factgen-exe
   PRIVATE Boost::filesystem Boost::program_options
-          Boost::iostreams ${OpenMP_CXX_LIBRARIES}
+          Boost::iostreams OpenMP::OpenMP_CXX
           LLVM)
 
 target_sources(factgen-exe PRIVATE ${FACTGEN_LIB_SOURCES})
@@ -282,7 +280,6 @@ target_compile_definitions(cc2json PRIVATE USE_LIBZ)
 if(NOT LLVM_ENABLE_RTTI)
   target_compile_options(cc2json PRIVATE -fno-rtti)
 endif()
-target_link_options(cc2json PRIVATE -fopenmp)
 
 # -----------------------------------------------------------------------------
 
