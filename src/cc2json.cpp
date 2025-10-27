@@ -303,6 +303,71 @@ static std::string json_escape(const std::string& s) {
     return result;
 }
 
+struct UniqueFilenameMapper {
+    // Maps from short filename to the (directory, filename) pair that claimed it
+    std::map<std::string, std::pair<std::string, std::string>> shortToFull;
+
+    // Maps from (directory, filename) to its assigned short filename
+    std::map<std::pair<std::string, std::string>, std::string> fullToShort;
+
+    std::string getShortFilename(const std::string& directory, const std::string& filename) {
+        auto key = std::make_pair(directory, filename);
+
+        // Check if we've already assigned a short name for this pair
+        auto it = fullToShort.find(key);
+        if (it != fullToShort.end()) {
+            return it->second;
+        }
+
+        // Try the original filename first
+        std::string candidate = filename;
+        int suffix = 1;
+
+        while (true) {
+            auto sit = shortToFull.find(candidate);
+            if (sit == shortToFull.end()) {
+                // This short name is available
+                shortToFull[candidate] = key;
+                fullToShort[key] = candidate;
+                return candidate;
+            }
+
+            // Check if the existing mapping is for the same (directory, filename)
+            if (sit->second == key) {
+                return candidate;
+            }
+
+            // Generate next candidate with suffix
+            candidate = filename + "!" + std::to_string(suffix);
+            suffix++;
+        }
+    }
+};
+
+std::string llvm_call_site_to_string(const llvm::Value* val, UniqueFilenameMapper &ufm) {
+    if (!val) {
+        return "nullptr";
+    }
+    if (const llvm::Instruction *I = dyn_cast<llvm::Instruction>(val)) {
+        if (const llvm::DebugLoc Loc = I->getDebugLoc()) {
+            unsigned Line = Loc.getLine();
+            unsigned Column = Loc.getCol();
+            llvm::DILocalScope *Scope = Loc.get()->getScope();
+            //llvm::StringRef Filename = Loc.getFilename();
+
+            std::string uf = ufm.getShortFilename(Scope->getDirectory().str(),
+                                                  Scope->getFilename().str());
+
+            std::string str;
+            llvm::raw_string_ostream os(str);
+            os << "{ " << "\"line\": " << Line << ", \"col\": " << Column
+                       << ", \"uf\": \"" << json_escape(uf) << "\" }";
+            return os.str();
+        }
+    }
+    return std::string("\"") + llvm_value_to_string(val) + std::string("\"");
+}
+
 // Process a string to strip "*global_alloc@" prefix and filter entries starting with "."
 static std::optional<std::string> process_global_name(const std::string& name) {
     std::string processed = name;
@@ -344,6 +409,7 @@ static bool is_trivial_alias(const std::string& alloc1, const std::string& alloc
 
     return false;
 }
+
 
 int main(int argc, char *argv[]) {
     llvm::cl::ParseCommandLineOptions(argc, argv, "cclyzer++ standalone analysis\n");
@@ -608,6 +674,8 @@ int main(int argc, char *argv[]) {
         std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
     }
 
+    UniqueFilenameMapper ufm;
+
     // Print connected components relations
     std::string cc_prefix = da_str(cclyzer::datalog_analysis) + "_connected_components";
 
@@ -617,7 +685,14 @@ int main(int argc, char *argv[]) {
         boost::flyweight<std::string>>(
         cc_prefix + ".calls_target", llvm_val_map);
     for (const auto& [call_site, callee] : calls_target_rel) {
-        std::cout << "  " << call_site << " -> " << callee << "\n";
+
+        std::cout << "  " << call_site;
+        const llvm::Value* call_site_val = llvm_val_map.at(boost::flyweight<std::string>(call_site));
+        if (call_site_val) {
+            std::cout << "  " << llvm_call_site_to_string(call_site_val, ufm);
+        }
+
+        std::cout << " -> " << callee << "\n";
     }
 
     std::cout << "\n--- Relation: " << cc_prefix << ".component_representative ---\n";
@@ -921,7 +996,12 @@ int main(int argc, char *argv[]) {
                 if (!first_site) {
                     json_file << ",\n";
                 }
-                json_file << "        \"" << json_escape(site) << "\"";
+                const llvm::Value* call_site_val = llvm_val_map.at(boost::flyweight<std::string>(site));
+                if (call_site_val) {
+                  json_file << "        " << llvm_call_site_to_string(call_site_val, ufm);
+                } else {
+                  json_file << "        \"" << json_escape(site) << "\"";
+                }
                 first_site = false;
             }
             json_file << "\n      ],\n";
@@ -944,6 +1024,22 @@ int main(int argc, char *argv[]) {
         }
 
         json_file << "\n  ],\n";
+
+        // Add unique filename mapping
+        json_file << "  \"unique_filenames\": {\n";
+        bool first_ufm = true;
+        for (const auto& [shortName, fullPath] : ufm.shortToFull) {
+            if (!first_ufm) {
+                json_file << ",\n";
+            }
+            first_ufm = false;
+
+            json_file << "  \"" << json_escape(shortName) << "\": {"
+                << "\"directory\": \"" << json_escape(fullPath.first) << "\", "
+                << "\"filename\": \"" << json_escape(fullPath.second) << "\"}";
+        }
+        json_file << "\n  },\n";
+
 
         // Add mutable global tissue
         json_file << "  \"mutable_global_tissue\": {\n";
