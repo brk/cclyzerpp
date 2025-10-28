@@ -360,7 +360,9 @@ std::string llvm_call_site_to_string(const llvm::Value* val, UniqueFilenameMappe
 
             std::string str;
             llvm::raw_string_ostream os(str);
-            os << "{ " << "\"line\": " << Line << ", \"col\": " << Column
+            os << "{ " << "\"line\": " << Line
+                       << ", \"col\": " << Column
+                       << ", \"p\": \"" << I->getFunction()->getName() << "\""
                        << ", \"uf\": \"" << json_escape(uf) << "\" }";
             return os.str();
         }
