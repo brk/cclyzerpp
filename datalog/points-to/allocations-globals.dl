@@ -39,3 +39,11 @@ static_allocation_type(?alloc, ?type) :-
 static_allocation_type(?alloc, ?type) :-
    global_allocation_by_variable(?gVar, ?alloc),
    global_var_type(?gVar, ?type).
+
+// For opaque pointers, infer the pointee type from the initializer constant.
+// This is essential with opaque pointers (LLVM 15+) where global_var_type
+// gives us 'ptr' but we need the actual struct/array type for subregion analysis.
+static_allocation_type(?alloc, ?constantType) :-
+   global_allocation_by_variable(?gVar, ?alloc),
+   global_var_initializer(?gVar, ?constant),
+   constant_has_type(?constant, ?constantType).
