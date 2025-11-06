@@ -1101,12 +1101,25 @@ int main(int argc, char *argv[]) {
 
         first = true;
         for (const auto& [var, refs] : init_refs_map) {
+            // Filter out string constants (names starting with ".")
+            std::vector<std::string> filtered_refs;
+            for (const auto& ref : refs) {
+                if (!ref.empty() && ref[0] != '.') {
+                    filtered_refs.push_back(ref);
+                }
+            }
+
+            // Skip entries with no non-string references
+            if (filtered_refs.empty()) {
+                continue;
+            }
+
             if (!first) {
                 json_file << ",\n";
             }
             json_file << "    \"" << json_escape(var) << "\": [\n";
             bool first_ref = true;
-            for (const auto& ref : refs) {
+            for (const auto& ref : filtered_refs) {
                 if (!first_ref) {
                     json_file << ",\n";
                 }
