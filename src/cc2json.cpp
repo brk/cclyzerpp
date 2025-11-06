@@ -676,6 +676,12 @@ int main(int argc, char *argv[]) {
         std::cout << "  " << llvm_value_to_string(std::get<0>(func_tuple)) << "\n";
     }
 
+    // Read global_initializer_references relation
+    auto global_init_refs_rel = pa->relationToVector<
+        boost::flyweight<std::string>,
+        boost::flyweight<std::string>>(
+        "global_initializer_references", llvm_val_map);
+
     UniqueFilenameMapper ufm;
 
     // Print connected components relations
@@ -1069,7 +1075,48 @@ int main(int argc, char *argv[]) {
             first = false;
         }
         json_file << "\n    ]\n";
-        json_file << "  }\n";
+        json_file << "  },\n\n";
+
+        // Write global_initializer_references
+        json_file << "  \"global_initializer_references\": {\n";
+        std::map<std::string, std::vector<std::string>> init_refs_map;
+        for (const auto& [global_var, ref_name] : global_init_refs_rel) {
+            std::string var_str = global_var.get();
+            std::string name_str = ref_name.get();
+
+            // Extract global variable name: from "<file>:@name" extract "name"
+            auto at_pos = var_str.rfind(":@");
+            if (at_pos != std::string::npos) {
+                std::string var_name = var_str.substr(at_pos + 2); // skip ":@"
+
+                // Strip leading "@" from referenced name for consistency
+                std::string ref_name = name_str;
+                if (!ref_name.empty() && ref_name[0] == '@') {
+                    ref_name = ref_name.substr(1);
+                }
+
+                init_refs_map[var_name].push_back(ref_name);
+            }
+        }
+
+        first = true;
+        for (const auto& [var, refs] : init_refs_map) {
+            if (!first) {
+                json_file << ",\n";
+            }
+            json_file << "    \"" << json_escape(var) << "\": [\n";
+            bool first_ref = true;
+            for (const auto& ref : refs) {
+                if (!first_ref) {
+                    json_file << ",\n";
+                }
+                json_file << "      \"" << json_escape(ref) << "\"";
+                first_ref = false;
+            }
+            json_file << "\n    ]";
+            first = false;
+        }
+        json_file << "\n  }\n";
 
         json_file << "}\n";
         json_file.close();

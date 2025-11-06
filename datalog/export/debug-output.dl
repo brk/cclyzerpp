@@ -388,6 +388,8 @@
 .output global_var_demangled_name (compress=true)
 .output global_var_flag (compress=true)
 .output global_var_initializer (compress=true)
+.output constant_in_initializer (compress=true)
+.output global_initializer_references (compress=true)
 .output global_var_is_constant (compress=true)
 .output global_var_linkage (compress=true)
 .output global_var_name (compress=true)

@@ -57,3 +57,44 @@ constant_ptr_points_to(?aCtx, ?someAlloc, ?aCtx, ?alloc) :-
    empty_alloc_context(?aCtx),
    initialized_by_constant(?alloc, ?constant),
    constant_points_to(?constant, ?someAlloc).
+
+
+//------------------------------------------------------------------------------
+// [Global Initializer References]
+//
+// Track which global variables reference other names (globals, functions)
+// in their initializers. This is useful for dependency analysis.
+//------------------------------------------------------------------------------
+
+// Helper: All constants that appear in a global's initializer (recursively)
+.decl constant_in_initializer(?var: GlobalVariable, ?constant: Constant)
+
+constant_in_initializer(?var, ?constant) :-
+   global_var_initializer(?var, ?constant).
+
+constant_in_initializer(?var, ?innerConstant) :-
+   constant_in_initializer(?var, ?constant),
+   constant_struct(?constant),
+   constant_struct_index(?constant, _, ?innerConstant).
+
+constant_in_initializer(?var, ?innerConstant) :-
+   constant_in_initializer(?var, ?constant),
+   constant_array(?constant),
+   constant_array_index(?constant, _, ?innerConstant).
+
+// Main output relation: global variable -> referenced name
+.decl global_initializer_references(?var: symbol, ?referencedName: symbol)
+
+// Global variable references in initializers
+global_initializer_references(?var, ?name) :-
+   global_var_initializer(?var, ?constant),
+   constant_struct(?constant),
+   constant_struct_index(?constant, _, ?globalConstant),
+   global_var_constant_name(?globalConstant, ?name).
+
+// Function references in initializers
+global_initializer_references(?var, ?name) :-
+   global_var_initializer(?var, ?constant),
+   constant_struct(?constant),
+   constant_struct_index(?constant, _, ?funcConstant),
+   func_constant_fn_name(?funcConstant, ?name).
