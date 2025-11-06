@@ -85,16 +85,12 @@ constant_in_initializer(?var, ?innerConstant) :-
 // Main output relation: global variable -> referenced name
 .decl global_initializer_references(?var: symbol, ?referencedName: symbol)
 
-// Global variable references in initializers
+// Global variable references in initializers (use recursive helper)
 global_initializer_references(?var, ?name) :-
-   global_var_initializer(?var, ?constant),
-   constant_struct(?constant),
-   constant_struct_index(?constant, _, ?globalConstant),
+   constant_in_initializer(?var, ?globalConstant),
    global_var_constant_name(?globalConstant, ?name).
 
-// Function references in initializers
+// Function references in initializers (use recursive helper)
 global_initializer_references(?var, ?name) :-
-   global_var_initializer(?var, ?constant),
-   constant_struct(?constant),
-   constant_struct_index(?constant, _, ?funcConstant),
+   constant_in_initializer(?var, ?funcConstant),
    func_constant_fn_name(?funcConstant, ?name).
