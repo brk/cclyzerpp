@@ -48,13 +48,21 @@
     ?allocStr = as(?alloc, symbol),
     contains(".str", ?allocStr).
 
+  // Helper: Required input relation for constant_points_to lookup
+  .decl constant_points_to(?constant: Constant, ?alloc: Allocation) inline
+
   // A function directly accesses a mutable/escaped global if it uses a constant
   // (in any instruction) that points to a mutable/escaped global allocation.
   // This covers loads, stores, address computations (&foo), and any other use.
   // BUT exclude accesses to function allocations and string constants.
+  //
+  // NOTE: We check constant_points_to directly (independent of reachability)
+  // rather than operand_points_to (which requires reachability), because we want
+  // to detect all functions that access mutable globals, even if they're currently
+  // unreachable (they might be called via function pointers or exported).
   directly_accesses_mutable_global(?func) :-
     constant_in_func(?constant, ?func),
-    operand_points_to(_, ?alloc, _, ?constant),
+    constant_points_to(?constant, ?alloc),
     mutated_or_escaped_global(?alloc),
     !_is_function_allocation(?alloc),
     !_is_string_constant(?alloc).

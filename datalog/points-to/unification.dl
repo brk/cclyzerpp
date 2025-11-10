@@ -742,6 +742,9 @@ unification_mutable_global_tissue.global_allocation_by_func(?func, ?alloc) :-
 unification_mutable_global_tissue.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
   unification.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
 
+unification_mutable_global_tissue.constant_points_to(?constant, ?alloc) :-
+  constant_points_to(?constant, ?alloc).
+
 unification_mutable_global_tissue.reachable_context(?ctx, ?func) :-
   unification.callgraph.reachable_context(?ctx, ?func).
 
