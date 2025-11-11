@@ -17,7 +17,7 @@
   .decl alloc_subregion_at_any_array_index(?alloc: Allocation, ?region: AllocSubregion) inline
   .decl alloc_subregion_offset(?alloc: Allocation, ?region: AllocSubregion, ?offset: SubregionOffset) inline
   .decl allocation_type(?alloc:Allocation, ?type:Type) inline
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
   .decl memcpy_sig(?toCtx: Context, ?to: Allocation, ?fromCtx: Context , ?from: Allocation) inline
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
@@ -43,7 +43,7 @@
     "@memcpy"=substr(?name,0,7);
     "@llvm.memcpy"=substr(?name,0,12)
     ),
-    callgraph_edge(_, ?callee, ?callerCtx, ?memcpyInstr),
+    reachable_callgraph_edge(_, ?callee, ?callerCtx, ?memcpyInstr),
     actual_arg(?memcpyInstr, 0, ?to),
     actual_arg(?memcpyInstr, 1, ?from),
     actual_arg(?memcpyInstr, 2, ?sizeOp),

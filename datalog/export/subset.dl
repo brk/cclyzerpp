@@ -1,4 +1,4 @@
-.output subset.callgraph.callgraph_edge (compress=true)
+.output subset.callgraph.reachable_callgraph_edge (compress=true)
 .output subset.var_points_to (compress=true)
 .output subset.ptr_points_to (compress=true)
 .output subset.operand_points_to (compress=true)

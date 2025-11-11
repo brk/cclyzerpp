@@ -472,7 +472,7 @@ int main(int argc, char *argv[]) {
         call_graph;
     const auto callgraph_vec =
         pa->relationToVector<int, const llvm::Value *, int, const llvm::Value *>(
-            cclyzer::callgraph_edge(cclyzer::datalog_analysis), llvm_val_map);
+            cclyzer::reachable_callgraph_edge(cclyzer::datalog_analysis), llvm_val_map);
     for (const auto &[callee_ctx, callee, caller_ctx, caller] : callgraph_vec) {
         std::tuple<int, int, const llvm::Value *> entry(
             caller_ctx, callee_ctx, callee);

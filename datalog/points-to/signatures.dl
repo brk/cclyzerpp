@@ -114,7 +114,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
   .decl allocation_type(?alloc:Allocation, ?type:Type) inline
   .decl alloc_may_alias(?alloc1: Allocation, ?alloc2: Allocation) inline
   .decl alloc_with_ctx(?aCtx: Context, ?alloc: Allocation) inline
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
   .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl ptr_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?ptr: Allocation) inline
@@ -250,7 +250,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      alloc_may_alias(?alloc, ?allocAlias).
 
   signature_var_points_to_base(?aCtx, ?alloc, ?callerCtx, ?toVar) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_arg(?name, ?index),
      instr_assigns_to(?callerInstr, ?toVar),
@@ -258,14 +258,14 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      operand_points_to(?aCtx, ?alloc, ?callerCtx, ?fromValue).
 
   _ptr_reaches_to_request(?ptrACtx, ?ptrAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_arg_reachable(?name, ?index),
      actual_arg(?callerInstr, ?index, ?fromValue),
      operand_points_to(?ptrACtx, ?ptrAlloc, ?callerCtx, ?fromValue).
 
   signature_var_points_to_base(?aCtx, ?alloc, ?callerCtx, ?toVar) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_arg_reachable(?name, ?index),
      instr_assigns_to(?callerInstr, ?toVar),
@@ -274,7 +274,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      _ptr_reaches_to(?aCtx, ?alloc, ?ptrACtx, ?ptrAlloc).
 
   signature_var_points_to_base(?aCtx, ?alloc, ?callerCtx, ?toVar) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_points_to_global(?name, ?globalName),
      global_allocation_by_name(?globalName, ?alloc),
@@ -282,7 +282,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      instr_assigns_to(?callerInstr, ?toVar).
 
   signature_var_points_to_base(?aCtx, ?alloc, ?callerCtx, ?toVar) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_global(?name, ?globalName),
      global_allocation_by_name(?globalName, ?globalAlloc),
@@ -291,7 +291,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      ptr_points_to(?aCtx, ?alloc, ?globalCtx, ?globalAlloc).
 
   _ptr_reaches_to_request(?globalCtx, ?globalAlloc) :-
-     callgraph_edge(_, ?callee, _, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, _, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_global_reachable(?name, ?globalName),
      global_allocation_by_name(?globalName, ?globalAlloc),
@@ -299,7 +299,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      instr_assigns_to(?callerInstr, _).
 
   signature_var_points_to_base(?aCtx, ?alloc, ?callerCtx, ?toVar) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_return_aliases_global_reachable(?name, ?globalName),
      global_allocation_by_name(?globalName, ?globalAlloc),
@@ -308,7 +308,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      _ptr_reaches_to(?aCtx, ?alloc, ?globalCtx, ?globalAlloc).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_arg(?name, ?toIndex, ?fromIndex),
      actual_arg(?callerInstr, ?toIndex, ?toValue),
@@ -317,7 +317,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      operand_points_to(?fromACtx, ?fromAlloc, ?callerCtx, ?fromValue).
 
   _ptr_reaches_to_request(?fromPtrACtx, ?fromPtrAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_arg_reachable(?name, ?toIndex, ?fromIndex),
      actual_arg(?callerInstr, ?toIndex, ?toValue),
@@ -326,7 +326,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      operand_points_to(?fromPtrACtx, ?fromPtrAlloc, ?callerCtx, ?fromValue).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_arg_reachable(?name, ?toIndex, ?fromIndex),
      actual_arg(?callerInstr, ?toIndex, ?toValue),
@@ -336,7 +336,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      _ptr_reaches_to(?fromACtx, ?fromAlloc, ?fromPtrACtx, ?fromPtrAlloc).
 
   signature_ptr_points_to_base(?gACtx, ?gAlloc, ?ptrACtx, ?ptrAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_points_to_global(?name, ?index, ?globalName),
      actual_arg(?callerInstr, ?index, ?toValue),
@@ -345,7 +345,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      empty_context(?gACtx).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_global(?name, ?index, ?globalName),
      actual_arg(?callerInstr, ?index, ?toValue),
@@ -354,7 +354,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      empty_context(?fromACtx).
 
   _ptr_reaches_to_request(?gACtx, ?gAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_global_reachable(?name, ?index, ?globalName),
      actual_arg(?callerInstr, ?index, ?toValue),
@@ -363,7 +363,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      empty_context(?gACtx).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_arg_memcpy_global_reachable(?name, ?index, ?globalName),
      actual_arg(?callerInstr, ?index, ?toValue),
@@ -373,7 +373,7 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      _ptr_reaches_to(?fromACtx, ?fromAlloc, ?gACtx, ?gAlloc).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_global_memcpy_arg(?name, ?globalName, ?index),
      actual_arg(?callerInstr, ?index, ?toValue),
@@ -382,14 +382,14 @@ build_signature_allocation_once(sigAlloc, func, type, pos) :-
      empty_context(?toACtx).
 
   _ptr_reaches_to_request(?ptrACtx, ?ptrAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_global_memcpy_arg_reachable(?name, _, ?index),
      actual_arg(?callerInstr, ?index, ?toValue),
      operand_points_to(?ptrACtx, ?ptrAlloc, ?callerCtx, ?toValue).
 
   memcpy_sig(?toACtx, ?toAlloc, ?fromACtx, ?fromAlloc) :-
-     callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+     reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
      func_name(?callee, ?name),
      signature_global_memcpy_arg_reachable(?name, ?globalName, ?index),
      actual_arg(?callerInstr, ?index, ?toValue),

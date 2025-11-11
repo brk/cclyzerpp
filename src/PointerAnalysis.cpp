@@ -145,14 +145,14 @@ static auto get_interface(Analysis which) -> std::unique_ptr<PAInterface> {
   assert(false && "unreachable");
 }
 
-static auto callgraph_edge(Analysis which) -> std::string {
+static auto reachable_callgraph_edge(Analysis which) -> std::string {
   switch (which) {
     case Analysis::DEBUG:
       [[fallthrough]];
     case Analysis::SUBSET:
-      return "subset.callgraph.callgraph_edge";
+      return "subset.callgraph.reachable_callgraph_edge";
     case Analysis::UNIFICATION:
-      return "unification.callgraph.callgraph_edge";
+      return "unification.callgraph.reachable_callgraph_edge";
   }
   assert(false && "unreachable");
 }
@@ -303,7 +303,7 @@ auto LegacyPointerAnalysis::runOnModule(llvm::Module &mod) -> bool {
       call_graph;
   const auto callgraph_vec =
       pa->relationToVector<int, const llvm::Value *, int, const llvm::Value *>(
-          callgraph_edge(datalog_analysis), llvm_val_map);
+          reachable_callgraph_edge(datalog_analysis), llvm_val_map);
   for (const auto &[callee_ctx, callee, caller_ctx, caller] : callgraph_vec) {
     std::tuple<int, int, const llvm::Value *> entry(
         caller_ctx, callee_ctx, callee);

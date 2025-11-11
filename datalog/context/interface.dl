@@ -152,6 +152,12 @@ drop_last(?out, ?in),
     context_item_by_invoc(?callerInstr, ?newItem),
     ?newCtx = [?newItem, ?droppedCallerCtx].
 
+  // The case for unreachable calls (for complete static call graph)
+  // Always use empty context for both caller and callee
+  merge(nil, ?callerInstr, nil)
+   :-
+    (call_instr(?callerInstr); invoke_instr(?callerInstr)).
+
   //---------------------------------------------------------
   // Assertions
   //---------------------------------------------------------

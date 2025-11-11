@@ -40,7 +40,7 @@ cxx_atexit_func(?func) :-
   //----------------------------------------------------------------------------
 
   .decl alloc_aliases(?alloc1: Allocation, ?alloc2: Allocation) inline
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
 
@@ -54,7 +54,7 @@ cxx_atexit_func(?func) :-
   .decl _registers_dtor_atexit(?callCtx: Context, ?dtorOperand: Operand, ?recvOperand: Operand)
   _registers_dtor_atexit(?callCtx, ?dtorOperand, ?recvOperand) :-
     cxx_atexit_func(?atExit),
-    callgraph_edge(_, ?atExit, ?callCtx, ?callInstr),
+    reachable_callgraph_edge(_, ?atExit, ?callCtx, ?callInstr),
     call_instr_arg(?callInstr, 0, ?dtorOperand),
     call_instr_arg(?callInstr, 1, ?recvOperand).
 
@@ -66,7 +66,7 @@ cxx_atexit_func(?func) :-
 
   _registers_atexit(?callerCtx, ?funcOp) :-
     func_name(?atExit, "@atexit"),
-    callgraph_edge(_, ?atExit, ?callerCtx, ?callerInstr),
+    reachable_callgraph_edge(_, ?atExit, ?callerCtx, ?callerInstr),
     actual_arg(?callerInstr, 0, ?funcOp).
 
   // Functions registered to @atexit are also reachable if the @atexit
@@ -80,7 +80,7 @@ cxx_atexit_func(?func) :-
 
   called_at_exit(Callback) :-
     func_name(AtExit, "@atexit"),
-    callgraph_edge(_, AtExit, _, CallerInstr),
+    reachable_callgraph_edge(_, AtExit, _, CallerInstr),
     call_instr_arg(CallerInstr, 0, Constant),
     // the following is a simplified version of logic that can only
     // work with direct func calls

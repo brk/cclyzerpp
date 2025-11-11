@@ -1,4 +1,4 @@
-.output unification.callgraph.callgraph_edge (compress=true)
+.output unification.callgraph.reachable_callgraph_edge (compress=true)
 .output unification.var_points_to_final (compress=true)
 .output unification.ptr_points_to_final (compress=true)
 .output unification.operand_points_to_final (compress=true)

@@ -33,7 +33,7 @@ func_by_location(?alloc, ?callee) :-
   .decl reachable_instr(instr: Instruction)
 
   reachable_context(?calleeCtx, ?callee) :-
-     callgraph_edge(?calleeCtx, ?callee, _, _).
+     reachable_callgraph_edge(?calleeCtx, ?callee, _, _).
 
   reachable_func(?func) :-
     reachable_context(_, ?func).
@@ -69,7 +69,7 @@ func_by_location(?alloc, ?callee) :-
     ! insensitive(),
     global_allocation_by_func(?func, ?alloc),
     mutated_or_escaped_global(?alloc),
-    startup_context(?ctx).
+    startup_context(?ctx). // <-TODO_brk
 
   reachable_context(?ctx, ?func) :-
     insensitive(),
@@ -95,7 +95,7 @@ func_by_location(?alloc, ?callee) :-
 
   // Callgraph
 
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase)
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase)
 
   // Direct func calls
 
@@ -108,7 +108,7 @@ func_by_location(?alloc, ?callee) :-
      instr_func(?callerInstr, ?instrFunc),
      reachable_context(?callerCtx, ?instrFunc).
 
-  callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
+  reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
    :-
      _callgraph_edge_interim_direct_call(?callee, ?callerCtx, ?callerInstr),
@@ -123,7 +123,7 @@ func_by_location(?alloc, ?callee) :-
      instr_func(?callerInstr, ?instrFunc),
      reachable_context(?callerCtx, ?instrFunc).
 
-  callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
+  reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
    :-
      _callgraph_edge_interim_direct_invoke(?callee, ?callerCtx, ?callerInstr),
@@ -146,7 +146,7 @@ func_by_location(?alloc, ?callee) :-
      //pointer_type_has_component(?funcOpType, ?declaredType),
      //type_compatible(?actualType, ?declaredType).
 
-  callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
+  reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
    :-
      _callgraph_edge_interim_indirect_call(?callee, ?callerCtx, _, ?callerInstr),
@@ -155,7 +155,7 @@ func_by_location(?alloc, ?callee) :-
   .decl _callgraph_edge_interim_indirect_invoke(?callee: FunctionDecl, ?callerCtx: Context, ?aCtx: Context, ?callerInstr: CallBase)
 
   // TODO(lb): Perhaps don't store the allocation context? Seems unused by
-  // callgraph_edge.
+  // reachable_callgraph_edge.
   _callgraph_edge_interim_indirect_invoke(?callee, ?callerCtx, ?aCtx, ?callerInstr)
    :-
      invoke_instr(?callerInstr),
@@ -168,7 +168,7 @@ func_by_location(?alloc, ?callee) :-
      //pointer_type_has_component(?funcOpType, ?declaredType),
      //type_compatible(?actualType, ?declaredType).
 
-  callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
+  reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr)
    , context(?calleeCtx)
    :-
      _callgraph_edge_interim_indirect_invoke(?callee, ?callerCtx, _, ?callerInstr),
@@ -203,7 +203,7 @@ func_returns_value(?retValue, ?inFunction) :-
   // https://souffle-lang.github.io/components#input-rules
   //----------------------------------------------------------------------------
 
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
 
   //----------------------------------------------------------------------------
   // "Output"/defined rules
@@ -217,14 +217,14 @@ func_returns_value(?retValue, ?inFunction) :-
 
   // Actual argument to formal parameter `assignment`
   interp_assignment(?calleeCtx, ?param, ?callerCtx, ?argument) :-
-    callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
+    reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
     func_param(?callee, ?index, ?param),
     actual_arg(?callerInstr, ?index, ?argument).
 
   // Returned value to target variable `assignment`
 
   interp_assignment(?callerCtx, ?toVar, ?calleeCtx, ?retValue) :-
-    callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
+    reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
     func_returns_value(?retValue, ?callee),
     instr_assigns_to(?callerInstr, ?toVar).
 
@@ -250,7 +250,7 @@ func_returns_value(?retValue, ?inFunction) :-
     func_ty(?callee, ?type),
     func_type_has_varargs(?type),
     func_type_nparams(?type, ?n),
-    callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
+    reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
     actual_arg(?callerInstr, ?index, ?argument),
     ?index >= ?n,
     operand_has_type(?argument, ?argType).

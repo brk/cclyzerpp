@@ -19,7 +19,7 @@
   // Input relations (must be provided by parent context)
   //----------------------------------------------------------------------------
 
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
   .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
   .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
 
@@ -34,9 +34,9 @@
 // Known direct call targets
 //------------------------------------------------------------------------------
 
-  // Direct calls and invokes - these are already in callgraph_edge
+  // Direct calls and invokes - these are already in reachable_callgraph_edge
   calls_target(?callerInstr, ?callee) :-
-    callgraph_edge(_, ?callee, _, ?callerInstr).
+    reachable_callgraph_edge(_, ?callee, _, ?callerInstr).
 
 //------------------------------------------------------------------------------
 // Unknown indirect call targets

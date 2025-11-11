@@ -450,8 +450,8 @@ unification_signatures.allocation_type(?alloc, ?type) :-
 unification_signatures.alloc_may_alias(?alloc1, ?alloc2) :-
   unification_aliases.alloc_may_alias(?alloc1, ?alloc2).
 
-unification_signatures.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_signatures.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 unification_signatures.reachable_context(?ctx, ?func) :-
   unification.callgraph.reachable_context(?ctx, ?func).
@@ -474,8 +474,8 @@ unification.unify_var(?aCtx, ?alloc, ?ctx, ?var) :-
 
 .init unification_escape = EscapeAnalysis
 
-unification_escape.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_escape.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 unification_escape.reachable_context(?ctx, ?func) :-
   unification.callgraph.reachable_context(?ctx, ?func).
@@ -519,8 +519,8 @@ unification_memcpy.alloc_subregion_at_any_array_index(?alloc, ?region) :-
 unification_memcpy.alloc_subregion_offset(?alloc, ?region, ?offset) :-
   unification_subobjects.alloc_subregion_offset(?alloc, ?region, ?offset).
 
-unification_memcpy.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_memcpy.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 unification_memcpy.memcpy_sig(?toCtx, ?to, ?fromCtx, ?from) :-
   unification_signatures.memcpy_sig(?toCtx, ?to, ?fromCtx, ?from).
@@ -577,8 +577,8 @@ unification_at_exit.alloc_aliases(?alloc1, ?alloc2) :-
 unification_at_exit.reachable_context(?ctx, ?func) :-
   unification.callgraph.reachable_context(?ctx, ?func).
 
-unification_at_exit.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_at_exit.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 unification_at_exit.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
   unification.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
@@ -719,8 +719,8 @@ alloc_region(?alloc, "heap") :-
 
 .init unification_connected_components = ConnectedComponents
 
-unification_connected_components.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_connected_components.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 unification_connected_components.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   unification.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
@@ -748,5 +748,5 @@ unification_mutable_global_tissue.constant_points_to(?constant, ?alloc) :-
 unification_mutable_global_tissue.reachable_context(?ctx, ?func) :-
   unification.callgraph.reachable_context(?ctx, ?func).
 
-unification_mutable_global_tissue.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+unification_mutable_global_tissue.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).

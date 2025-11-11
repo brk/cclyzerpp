@@ -133,13 +133,13 @@
 
   .init interp_assignment = InterpAssignment
 
-  interp_assignment.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-    callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+  interp_assignment.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+    callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
   .init stripctx = StripCtx
 
-  stripctx.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-    callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+  stripctx.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+    callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
   stripctx.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
     operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).

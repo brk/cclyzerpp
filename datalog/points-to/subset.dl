@@ -89,8 +89,8 @@ subset_signatures.allocation_type(?alloc, ?type) :-
 subset_signatures.alloc_may_alias(?alloc1, ?alloc2) :-
   subset_aliases.alloc_may_alias(?alloc1, ?alloc2).
 
-subset_signatures.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_signatures.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 subset_signatures.reachable_context(?ctx, ?func) :-
   subset.callgraph.reachable_context(?ctx, ?func).
@@ -113,8 +113,8 @@ subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
 
 .init subset_escape = EscapeAnalysis
 
-subset_escape.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_escape.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 subset_escape.reachable_context(?ctx, ?func) :-
   subset.callgraph.reachable_context(?ctx, ?func).
@@ -158,8 +158,8 @@ subset_memcpy.alloc_subregion_at_any_array_index(?alloc, ?region) :-
 subset_memcpy.alloc_subregion_offset(?alloc, ?region, ?offset) :-
   subset_subobjects.alloc_subregion_offset(?alloc, ?region, ?offset).
 
-subset_memcpy.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_memcpy.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 subset_memcpy.memcpy_sig(?toCtx, ?to, ?fromCtx, ?from) :-
   subset_signatures.memcpy_sig(?toCtx, ?to, ?fromCtx, ?from).
@@ -216,8 +216,8 @@ subset_at_exit.alloc_aliases(?alloc1, ?alloc2) :-
 subset_at_exit.reachable_context(?ctx, ?func) :-
   subset.callgraph.reachable_context(?ctx, ?func).
 
-subset_at_exit.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_at_exit.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 subset_at_exit.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
   subset.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
@@ -333,8 +333,8 @@ alloc_region(?alloc, "stack") :-
 
 .init subset_connected_components = ConnectedComponents
 
-subset_connected_components.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_connected_components.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 subset_connected_components.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
@@ -362,5 +362,5 @@ subset_mutable_global_tissue.constant_points_to(?constant, ?alloc) :-
 subset_mutable_global_tissue.reachable_context(?ctx, ?func) :-
   subset.callgraph.reachable_context(?ctx, ?func).
 
-subset_mutable_global_tissue.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+subset_mutable_global_tissue.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).

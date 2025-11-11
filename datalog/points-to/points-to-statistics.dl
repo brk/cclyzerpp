@@ -162,7 +162,7 @@ _nallocs_by_pt_total[] = NVars
 .decl func_calls_func(?caller: Function, ?callee: Function)
 func_calls_func(?caller, ?callee) :-
   instr_func(?callerInstr, ?caller),
-  subset.callgraph.callgraph_edge(_, ?callee, _, ?callerInstr).
+  subset.callgraph.reachable_callgraph_edge(_, ?callee, _, ?callerInstr).
 
 // How many funcs does this func call?
 .decl func_out_degree(?funcName: FunctionName, ?degree: number)

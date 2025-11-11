@@ -36,7 +36,7 @@
   // https://souffle-lang.github.io/components#input-rules
   //----------------------------------------------------------------------------
 
-  .decl callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
+  .decl reachable_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: CallBase) inline
   .decl reachable_context(?ctx: Context, ?func: FunctionDecl) inline
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl ptr_points_to(?aCtx: Context, ?alloc: Allocation, ?ptrACtx: Context, ?ptrAlloc: Allocation) inline
@@ -307,7 +307,7 @@
   //----------------------------------------------------------------------------
 
   escaped_alloc(?aCtx, ?alloc) :-
-    callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+    reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
     escaping_arg(?callee, ?index, _), // any reason
     actual_arg(?callerInstr, ?index, ?arg),
     operand_points_to(?aCtx, ?alloc, ?callerCtx, ?arg).

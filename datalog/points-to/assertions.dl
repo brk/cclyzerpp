@@ -273,7 +273,7 @@ assert_reachable_direct_calls_have_callees(?ctx, ?call) :-
   direct_call_instr(?call),
   call_instr_func_operand(?call, ?funcOp),
   ! undef_constant(?funcOp),
-  ! subset.callgraph.callgraph_edge(_, _, ?ctx, ?call).
+  ! subset.callgraph.reachable_callgraph_edge(_, _, ?ctx, ?call).
 
 //------------------------------------------------------------------------------
 // Subset- and Unification-Based Analyses
@@ -335,8 +335,8 @@ assert_subset_reachable_ctx_implies_unification_reachable_ctx(?ctx, ?func) :-
 
 .decl assert_subset_callgraph_edge_implies_unification_callgraph_edge(?calleeCtx: Context, ?callee: FunctionDecl, ?callerCtx: Context, ?callerInstr: Instruction)
 assert_subset_callgraph_edge_implies_unification_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-
-  subset.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
-  ! unification.callgraph.callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
+  subset.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr),
+  ! unification.callgraph.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr).
 
 .decl assert_every_allocation_has_a_region(?alloc: Allocation)
 assert_every_allocation_has_a_region(?alloc) :-
