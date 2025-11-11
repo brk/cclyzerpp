@@ -197,15 +197,18 @@ void RefmodeEngine::Impl::computeNumbering(
 
 namespace fs = boost::filesystem;
 
+static llvm::cl::OptionCategory CJCat("cc2json options");
 static llvm::cl::opt<std::string>
     InputFilename(
-        llvm::cl::Positional, llvm::cl::desc("<input file>"), llvm::cl::Required);
+        llvm::cl::Positional, llvm::cl::desc("<input file>"), llvm::cl::Required,
+        llvm::cl::cat(CJCat));
 
 static llvm::cl::opt<std::string>
     JsonOutFilename(
         "json-out",
         llvm::cl::desc("Output file for JSON results"),
-        llvm::cl::value_desc("filename"));
+        llvm::cl::value_desc("filename"),
+        llvm::cl::cat(CJCat));
 
 auto factgen_module(
     llvm::Module &module,
@@ -415,6 +418,8 @@ static bool is_trivial_alias(const std::string& alloc1, const std::string& alloc
 
 
 int main(int argc, char *argv[]) {
+    const llvm::cl::OptionCategory*  relevant_cats[] = { &CJCat, &cclyzer::cccat };
+    llvm::cl::HideUnrelatedOptions(relevant_cats);
     llvm::cl::ParseCommandLineOptions(argc, argv, "cclyzer++ standalone analysis\n");
 
     // Set file descriptor limit to 1024 to ensure Souffle can open enough files
