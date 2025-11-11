@@ -27,7 +27,8 @@ auto FactGenerator::processModule(
     const llvm::Module &Mod,
     const std::string &path,
     const std::optional<boost::filesystem::path> &signatures,
-    const ContextSensitivity &sensitivity)
+    const ContextSensitivity &sensitivity,
+    const Entrypoints entrypoints)
     -> std::map<boost::flyweight<std::string>, const llvm::Value *> {
   InstructionVisitor iv(*this, Mod);
   ModuleContext mc(*this, Mod, path);
@@ -56,6 +57,11 @@ auto FactGenerator::processModule(
       predicates::user::options,
       "context_sensitivity",
       context_sensitivity_to_string(sensitivity));
+
+  writeFact(
+      predicates::user::options,
+      "entrypoints",
+      entrypoints_to_string(entrypoints));
 
   // iterating over functions in a module
   for (const auto &func : Mod) {

@@ -20,7 +20,8 @@ auto factgen_module(
     llvm::Module &,
     const fs::path &,
     const std::optional<boost::filesystem::path> &,
-    const ContextSensitivity)
+    const ContextSensitivity,
+    const Entrypoints)
     -> std::tuple<
         boost::filesystem::path,
         std::map<boost::flyweight<std::string>, const llvm::Value *>>;

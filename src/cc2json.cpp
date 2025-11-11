@@ -211,7 +211,8 @@ auto factgen_module(
     llvm::Module &module,
     const fs::path &output_dir,
     const std::optional<boost::filesystem::path> &signatures,
-    ContextSensitivity sensitivity)
+    ContextSensitivity sensitivity,
+    Entrypoints entrypoints)
     -> std::tuple<
         fs::path,
         std::map<boost::flyweight<std::string>, const llvm::Value *>> {
@@ -227,7 +228,7 @@ auto factgen_module(
   const std::string &real_path = module.getSourceFileName();
 
   // do the fact generation
-  auto res_maps = gen.processModule(module, real_path, signatures, sensitivity);
+  auto res_maps = gen.processModule(module, real_path, signatures, sensitivity, entrypoints);
 
   const llvm::DataLayout &layout = module.getDataLayout();
   gen.writeTypes(layout);
@@ -448,7 +449,8 @@ int main(int argc, char *argv[]) {
     }
 
     auto [dir, llvm_val_map] =
-        factgen_module(*module, output_dir, signatures_path, cclyzer::context_sensitivity);
+        factgen_module(*module, output_dir, signatures_path,
+            cclyzer::context_sensitivity, cclyzer::entrypoints);
     const auto pa = cclyzer::get_interface(cclyzer::datalog_analysis);
     PAFlags flags = PAFlags::NONE;
     if (cclyzer::datalog_debug_option) {

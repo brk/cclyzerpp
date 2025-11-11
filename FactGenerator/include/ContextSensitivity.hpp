@@ -4,6 +4,27 @@
 #include <iostream>
 #include <string>
 
+enum class Entrypoints {
+  MAIN,
+  LIBRARY,
+};
+
+constexpr char const* ENTRYPOINTS_MAIN_STRING = "main";
+constexpr char const* ENTRYPOINTS_LIBRARY_STRING = "library";
+
+// This needs to be kept in sync with user_options.dl.
+constexpr auto entrypoints_to_string(const Entrypoints& e) -> char const* {
+  switch (e) {
+    case Entrypoints::MAIN:
+      return ENTRYPOINTS_MAIN_STRING;
+    case Entrypoints::LIBRARY:
+      return ENTRYPOINTS_LIBRARY_STRING;
+    default:
+      assert(false);  // impossible
+  }
+}
+
+
 // For now, we can just hardcode a few context sensitivity options.  Down the
 // road we will want something more flexible that will probably involve string
 // parsing products of features, like Pidgin, but we need something that just

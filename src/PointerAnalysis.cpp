@@ -27,6 +27,13 @@ enum class Analysis {
 };
 
 namespace cclyzer {
+static llvm::cl::opt<Entrypoints> entrypoints(
+    "entrypoints",
+    llvm::cl::desc("Function reachability regime"),
+    llvm::cl::values(
+        clEnumValN(Entrypoints::MAIN, "main", "Require reachability from main()"),
+        clEnumValN(Entrypoints::LIBRARY, "library", "Consider all functions reachable")));
+
 static llvm::cl::opt<Analysis> datalog_analysis(
     "datalog-analysis",
     llvm::cl::desc("Which pointer analysis to variant run"),
@@ -279,7 +286,8 @@ auto LegacyPointerAnalysis::runOnModule(llvm::Module &mod) -> bool {
   }
 
   auto [dir, llvm_val_map] =
-      factgen_module(mod, output_dir, signatures_path, context_sensitivity);
+      factgen_module(mod, output_dir, signatures_path,
+          context_sensitivity, entrypoints);
   const auto pa = get_interface(datalog_analysis);
   PAFlags flags = PAFlags::NONE;
   if (datalog_debug_option) {

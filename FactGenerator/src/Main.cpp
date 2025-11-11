@@ -60,7 +60,7 @@ void cclyzer::factgen(
     std::string real_path = fs::canonical(input_file).string();
 
     // Generate facts for this module
-    gen.processModule(*module, real_path, signatures, context_sensitivity);
+    gen.processModule(*module, real_path, signatures, context_sensitivity, Entrypoints::MAIN);
 
     // Get data layout of this module
     const llvm::DataLayout &layout = module->getDataLayout();
