@@ -261,6 +261,12 @@ endif()
 # -----------------------------------------------------------------------------
 
 add_executable(cc2json src/cc2json.cpp)
+set_property(
+    SOURCE src/cc2json.cpp
+    APPEND PROPERTY OBJECT_DEPENDS
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/UniqueFilenameMapper.inc.cpp"
+)
+
 target_compile_features(cc2json PUBLIC cxx_std_17)
 target_include_directories(
   cc2json SYSTEM PRIVATE
