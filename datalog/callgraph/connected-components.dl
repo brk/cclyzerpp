@@ -59,13 +59,15 @@
     !_indirect_call_with_pointsto(?callerInstr).
 
   // Case 2: Indirect call where points-to gives non-function allocation
+  // (excluding NULL, since NULL is not a meaningful call target)
   calls_target(?callerInstr, "UNKNOWN") :-
     indirect_call_instr(?callerInstr),
     call_instr_func_operand(?callerInstr, ?funcOp),
     instr_func(?callerInstr, ?instrFunc),
     reachable_context(?callerCtx, ?instrFunc),
     var_points_to(_, ?allocation, ?callerCtx, ?funcOp),
-    !func_by_location(?allocation, _).
+    !func_by_location(?allocation, _),
+    !null_location(?allocation).
 
   // Helper: indirect invokes that have at least one points-to fact
   .decl _indirect_invoke_with_pointsto(instr: CallBase)
@@ -86,6 +88,7 @@
     !_indirect_invoke_with_pointsto(?callerInstr).
 
   // Case 4: Indirect invoke where points-to gives non-function allocation
+  // (excluding NULL, since NULL is not a meaningful call target)
   calls_target(?callerInstr, "UNKNOWN") :-
     invoke_instr(?callerInstr),
     !direct_invoke_instr(?callerInstr),
@@ -93,7 +96,8 @@
     instr_func(?callerInstr, ?instrFunc),
     reachable_context(?callerCtx, ?instrFunc),
     var_points_to(_, ?allocation, ?callerCtx, ?funcOp),
-    !func_by_location(?allocation, _).
+    !func_by_location(?allocation, _),
+    !null_location(?allocation).
 
   //----------------------------------------------------------------------------
   // Connected Components Computation
