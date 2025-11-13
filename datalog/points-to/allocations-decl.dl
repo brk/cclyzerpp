@@ -18,6 +18,7 @@
 .decl stack_allocation(?stackAlloc:StackAllocation)
 .decl heap_allocation(?heapAlloc:HeapAllocation)
 .decl global_allocation(?globalAlloc:GlobalAllocation)
+.decl externally_visible_global_allocation(?globalAlloc:GlobalAllocation)
 .decl signature_allocation(?sigAlloc:SignatureAllocation)
 
 allocation(?alloc) :-
@@ -28,6 +29,28 @@ basic_allocation(?alloc) :-
   heap_allocation(?alloc);
   global_allocation(?alloc);
   signature_allocation(?alloc).
+
+//------------------------------------------------------------------------------
+// [Override assumed visibility of globals]
+//
+// LLVM marks global variables with a translation-unit-oriented view,
+// conservatively assuming any non-static global could be accessed via
+// a declaration in another translation unit. This assumption is good for
+// individual translation units within an application, or for libraries.
+// But for whole-program analysis of applications, we can treat all globals
+// as though they had internal linkage.
+//
+// For Tenjin, rather than adding a separate `internalize_globals` flag,
+// we piggyback on `entrypoints` because we always do whole-program analysis
+// for applications.
+//------------------------------------------------------------------------------
+externally_visible_global_allocation(?alloc) :-
+   user_option_value("entrypoints", "library"),
+   global_allocation_by_variable(?globalVar,?alloc),
+   global_var_linkage(?globalVar, ?linkage),
+   ( internal_linkage_type(?linkage)
+   ; private_linkage_type(?linkage)
+   ).
 
 // Constructors
 

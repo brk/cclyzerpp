@@ -188,9 +188,9 @@
   //----------------------------------------------------------------------------
   // [Escape via Store to Memory]
   //
-  // A value escapes if it is stored to non-local memory (globals, heap, or
-  // already-escaped allocations). Storing to local stack allocations does NOT
-  // cause escape.
+  // A value escapes if it is stored to non-local memory (externally accessible
+  // globals, heap, or already-escaped allocations). Storing to local stack 
+  // allocations does NOT cause escape.
   //
   // This is the traditional "address taken" escape - if we store a pointer
   // to an allocation into memory that has escaped, that allocation has also
@@ -205,7 +205,7 @@
     operand_points_to(?aCtx, ?alloc, ?ctx, ?value),
     // Only escape if stored to non-local memory
     operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?addr),
-    ( global_allocation(?addrAlloc)
+    ( externally_visible_global_allocation(?addrAlloc)
     ; heap_allocation(?addrAlloc)
     ; escaped_alloc(?addrCtx, ?addrAlloc)
     ).
@@ -235,24 +235,8 @@
     var_points_to(?aCtx, ?alloc, ?ctx, ?param),
     operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
 
-  // Case 2: Argument is stored to a global
-  // Reason 3: stored to global
-  escaping_arg(?callee, ?index, 3) :-
-    func(?callee),
-    func_param(?callee, ?index, ?param),
-    reachable_context(?ctx, ?callee),
-    instr_func(?instr, ?callee),
-    store_instr_value(?instr, ?storeValue),
-    store_instr_address(?instr, ?storeAddr),
-    // The parameter points to something that's being stored
-    var_points_to(?aCtx, ?alloc, ?ctx, ?param),
-    operand_points_to(?aCtx, ?alloc, ?ctx, ?storeValue),
-    // The store is to a global
-    empty_alloc_context(?globalCtx),
-    operand_points_to(?globalCtx, ?globalAlloc, ?ctx, ?storeAddr),
-    global_allocation(?globalAlloc).
+  // Reason 3 currently unused
 
-  // Case 3: Argument is stored to already-escaped memory
   // Reason 4: stored to escaped memory
   escaping_arg(?callee, ?index, 4) :-
     func(?callee),
@@ -268,7 +252,6 @@
     operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?storeAddr),
     escaped_alloc(?addrCtx, ?addrAlloc).
 
-  // Case 4: Argument is passed to another escaping function (call instruction)
   // Reason 5: passed to escaping function (call)
   escaping_arg(?caller, ?callerIndex, 5) :-
     func(?caller),
@@ -284,7 +267,6 @@
     call_instr_fn_target(?callInstr, ?callee),
     escaping_arg(?callee, ?calleeIndex, _).
 
-  // Case 5: Argument is passed to another escaping function (invoke instruction)
   // Reason 6: passed to escaping function (invoke)
   escaping_arg(?caller, ?callerIndex, 6) :-
     func(?caller),
