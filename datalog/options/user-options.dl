@@ -122,3 +122,24 @@ user_option_valid_value("optimized_code","on").
 user_option_valid_value("optimized_code","off").
 
 user_option_default("optimized_code","on").
+
+//------------------------------------------------------------------------------
+// [Override assumed visibility of globals]
+//
+// LLVM marks global variables with a translation-unit-oriented view,
+// conservatively assuming any non-static global could be accessed via
+// a declaration in another translation unit. This assumption is good for
+// individual translation units within an application, or for libraries.
+// But for whole-program analysis of applications, we can treat all globals
+// as though they had internal linkage.
+//
+// This is not bundled together with entrypoints=main because in applicatins
+// which use function pointers in nontrivial ways, entrypoints=library is handy
+// to ensure analysis does not omit call sites within functions that don't have
+// obvious call sites themselves.
+//------------------------------------------------------------------------------
+
+user_option_valid_value("internalize_globals","on").
+user_option_valid_value("internalize_globals","off").
+
+user_option_default("internalize_globals","off").

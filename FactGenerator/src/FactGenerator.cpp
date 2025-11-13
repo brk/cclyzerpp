@@ -28,7 +28,8 @@ auto FactGenerator::processModule(
     const std::string &path,
     const std::optional<boost::filesystem::path> &signatures,
     const ContextSensitivity &sensitivity,
-    const Entrypoints entrypoints)
+    const Entrypoints entrypoints,
+    const bool internalize_globals)
     -> std::map<boost::flyweight<std::string>, const llvm::Value *> {
   InstructionVisitor iv(*this, Mod);
   ModuleContext mc(*this, Mod, path);
@@ -62,6 +63,11 @@ auto FactGenerator::processModule(
       predicates::user::options,
       "entrypoints",
       entrypoints_to_string(entrypoints));
+
+  writeFact(
+      predicates::user::options,
+      "internalize_globals",
+      internalize_globals ? "on" : "off");
 
   // iterating over functions in a module
   for (const auto &func : Mod) {

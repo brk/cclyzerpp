@@ -36,6 +36,12 @@ static llvm::cl::opt<Entrypoints> entrypoints(
         clEnumValN(Entrypoints::LIBRARY, "library", "Consider all functions reachable")),
     llvm::cl::cat(cccat));
 
+static llvm::cl::opt<bool> internalize_globals(
+    "internalize-globals",
+    llvm::cl::desc("Override assumed visibility of globals (treat all globals as internal linkage)"),
+    llvm::cl::init(false),
+    llvm::cl::cat(cccat));
+
 static llvm::cl::opt<Analysis> datalog_analysis(
     "datalog-analysis",
     llvm::cl::desc("Which pointer analysis to variant run"),
@@ -295,7 +301,7 @@ auto LegacyPointerAnalysis::runOnModule(llvm::Module &mod) -> bool {
 
   auto [dir, llvm_val_map] =
       factgen_module(mod, output_dir, signatures_path,
-          context_sensitivity, entrypoints);
+          context_sensitivity, entrypoints, internalize_globals);
   const auto pa = get_interface(datalog_analysis);
   PAFlags flags = PAFlags::NONE;
   if (datalog_debug_option) {

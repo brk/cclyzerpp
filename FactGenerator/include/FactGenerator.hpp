@@ -55,7 +55,8 @@ class cclyzer::FactGenerator : private RefmodeEngine,
       const std::string &path,
       const std::optional<boost::filesystem::path> &signatures,
       const ContextSensitivity &sensitivity,
-      const Entrypoints entrypoints)
+      const Entrypoints entrypoints,
+      const bool internalize_globals)
       -> std::map<boost::flyweight<std::string>, const llvm::Value *>;
   void writeLocalVariables();
   void writeTypes(const llvm::DataLayout &layout);
