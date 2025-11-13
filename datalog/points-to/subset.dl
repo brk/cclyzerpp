@@ -129,11 +129,11 @@ subset_escape.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
 // Copy escape analysis results to top-level relations
-mutated_or_escaped_global(?alloc) :-
+mutated_global(?alloc) :-
   global_allocation(?alloc),
   subset_escape.component_mutated_global(?alloc).
 
-mutated_or_escaped_global(?alloc) :-
+escaped_global(?alloc) :-
   global_allocation(?alloc),
   empty_alloc_context(?aCtx),
   subset_escape.component_escaped_alloc(?aCtx, ?alloc).
@@ -344,8 +344,11 @@ subset_connected_components.reachable_context(?ctx, ?func) :-
 
 .init subset_mutable_global_tissue = MutableGlobalTissue
 
-subset_mutable_global_tissue.mutated_or_escaped_global(?alloc) :-
-  mutated_or_escaped_global(?alloc).
+subset_mutable_global_tissue.mutated_global(?alloc) :-
+  mutated_global(?alloc).
+
+subset_mutable_global_tissue.escaped_global(?alloc) :-
+  escaped_global(?alloc).
 
 subset_mutable_global_tissue.global_allocation_by_variable(?var, ?alloc) :-
   global_allocation_by_variable(?var, ?alloc).

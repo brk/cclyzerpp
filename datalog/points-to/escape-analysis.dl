@@ -16,8 +16,11 @@
 // [Core Output Relations]
 //------------------------------------------------------------------------------
 
-// Main output: Global allocations that are mutated or escaped
-.decl mutated_or_escaped_global(?alloc: GlobalAllocation)
+// Global allocations that are mutated
+.decl mutated_global(?alloc: GlobalAllocation)
+
+// Global allocations that are escaped
+.decl escaped_global(?alloc: GlobalAllocation)
 
 // Helper: Which function argument positions cause values to escape
 // This is computed interprocedurally by analyzing how arguments are used

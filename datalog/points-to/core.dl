@@ -64,7 +64,7 @@
     empty_alloc_context(?aCtx),
     unknown_location(?unknown),
     global_allocation_by_func(?func, ?alloc),
-    mutated_or_escaped_global(?alloc),
+    (mutated_global(?alloc) ; escaped_global(?alloc)),
     callgraph.reachable_context(?ctx, ?func),
     func_param(?func, ?index, ?param),
     variable_has_type(?param, ?paramType),

@@ -597,10 +597,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Print escape analysis relations
-    std::cout << "\n--- Relation: mutated_or_escaped_global ---\n";
-    auto mutated_or_escaped_rel = pa->relationToVector<boost::flyweight<std::string>>(
-        "mutated_or_escaped_global", llvm_val_map);
-    for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+    std::cout << "\n--- Relation: mutated_global ---\n";
+    auto mutated_global_rel = pa->relationToVector<boost::flyweight<std::string>>(
+        "mutated_global", llvm_val_map);
+    for (const auto& alloc_tuple : mutated_global_rel) {
+        std::cout << "  " << std::get<0>(alloc_tuple) << "\n";
+    }
+
+    std::cout << "\n--- Relation: escaped_global ---\n";
+    auto escaped_global_rel = pa->relationToVector<boost::flyweight<std::string>>(
+        "escaped_global", llvm_val_map);
+    for (const auto& alloc_tuple : escaped_global_rel) {
         std::cout << "  " << std::get<0>(alloc_tuple) << "\n";
     }
 
@@ -746,7 +753,8 @@ int main(int argc, char *argv[]) {
     std::cout << "  allocation_sites: " << result.getAllocationSites().size() << "\n";
     std::cout << "  null_ptr_set: " << result.getNullPtrSet().size() << "\n";
     std::cout << "  callgraph: " << result.getCallGraph().size() << "\n";
-    std::cout << "  mutated_or_escaped_global: " << mutated_or_escaped_rel.size() << "\n";
+    std::cout << "  mutated_global: " << mutated_global_rel.size() << "\n";
+    std::cout << "  escaped_global: " << escaped_global_rel.size() << "\n";
     std::cout << "  escaping_function_arg: " << escaping_arg_rel.size() << "\n";
     std::cout << "  func_without_defn: " << func_without_defn_rel.size() << "\n";
     std::cout << "  " << cc_prefix << ".calls_target: " << calls_target_rel.size() << "\n";
@@ -770,10 +778,28 @@ int main(int argc, char *argv[]) {
         }
 
         json_file << "{\n";
-        json_file << "  \"mutated_or_escaped_global\": [\n";
+        json_file << "  \"mutated_globals\": [\n";
 
         bool first = true;
-        for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+        for (const auto& alloc_tuple : mutated_global_rel) {
+            std::string name = std::get<0>(alloc_tuple).get();
+            auto processed_opt = process_global_name(name);
+
+            if (processed_opt.has_value()) {
+                if (!first) {
+                    json_file << ",\n";
+                }
+                json_file << "    \"" << json_escape(processed_opt.value()) << "\"";
+                first = false;
+            }
+        }
+
+        json_file << "\n  ],\n";
+
+        json_file << "  \"escaped_globals\": [\n";
+
+        first = true;
+        for (const auto& alloc_tuple : escaped_global_rel) {
             std::string name = std::get<0>(alloc_tuple).get();
             auto processed_opt = process_global_name(name);
 
@@ -879,9 +905,9 @@ int main(int argc, char *argv[]) {
             external_funcs.insert(std::get<0>(func_tuple).get());
         }
 
-        // Build set of escaped function allocations
+        // Build set of escaped function allocations (plus other escaped global names)
         std::set<std::string> escaped_funcs;
-        for (const auto& alloc_tuple : mutated_or_escaped_rel) {
+        for (const auto& alloc_tuple : escaped_global_rel) {
             std::string name = std::get<0>(alloc_tuple).get();
             // Strip "*global_alloc@" prefix if present
             const std::string prefix = "*global_alloc@";

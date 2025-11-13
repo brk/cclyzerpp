@@ -11,6 +11,7 @@
 .output global_allocation_by_variable (compress=true)
 .output context_to_string (compress=true)
 .output escaping_function_arg (compress=true)
-.output mutated_or_escaped_global (compress=true)
+.output mutated_global (compress=true)
+.output escaped_global (compress=true)
 .output func_without_defn (compress=true)
 .output global_initializer_references (compress=true)

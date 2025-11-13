@@ -68,14 +68,14 @@ func_by_location(?alloc, ?callee) :-
   reachable_context(?ctx, ?func) :-
     ! insensitive(),
     global_allocation_by_func(?func, ?alloc),
-    mutated_or_escaped_global(?alloc),
+    (mutated_global(?alloc) ; escaped_global(?alloc)),
     startup_context(?ctx). // <-TODO_brk
 
   reachable_context(?ctx, ?func) :-
     insensitive(),
     empty_context(?ctx),
     global_allocation_by_func(?func, ?alloc),
-    mutated_or_escaped_global(?alloc).
+    (mutated_global(?alloc) ; escaped_global(?alloc)).
 
   .decl reachable_store(?ctx: Context, ?toAddress: Operand, ?value: Operand)
 

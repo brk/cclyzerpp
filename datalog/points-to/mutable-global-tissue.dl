@@ -15,7 +15,8 @@
   // Input relations (must be provided by parent context)
   //----------------------------------------------------------------------------
 
-  .decl mutated_or_escaped_global(?alloc: Allocation) inline
+  .decl mutated_global(?alloc: Allocation) inline
+  .decl escaped_global(?alloc: Allocation) inline
   .decl global_allocation_by_variable(?var: GlobalVariable, ?alloc: Allocation) inline
   .decl global_allocation_by_func(?func: FunctionDecl, ?alloc: Allocation) inline
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
@@ -36,6 +37,11 @@
   // Implementation
   //----------------------------------------------------------------------------
 
+  // Internal helper: Combined view of mutated or escaped globals
+  .decl _mutated_or_escaped_global(?alloc: Allocation)
+  _mutated_or_escaped_global(?alloc) :- mutated_global(?alloc).
+  _mutated_or_escaped_global(?alloc) :- escaped_global(?alloc).
+
   // Helper: Allocations that are function allocations
   .decl _is_function_allocation(?alloc: Allocation)
   _is_function_allocation(?alloc) :-
@@ -44,7 +50,7 @@
   // Helper: Allocations that are string constants (contain ".str" in their name)
   .decl _is_string_constant(?alloc: Allocation)
   _is_string_constant(?alloc) :-
-    mutated_or_escaped_global(?alloc),
+    _mutated_or_escaped_global(?alloc),
     ?allocStr = as(?alloc, symbol),
     contains(".str", ?allocStr).
 
@@ -63,7 +69,7 @@
   directly_accesses_mutable_global(?func) :-
     constant_in_func(?constant, ?func),
     constant_points_to(?constant, ?alloc),
-    mutated_or_escaped_global(?alloc),
+    _mutated_or_escaped_global(?alloc),
     !_is_function_allocation(?alloc),
     !_is_string_constant(?alloc).
 
