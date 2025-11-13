@@ -17,8 +17,7 @@ allocation_size(?globalAlloc, ?n) :-
   global_var_linkage(?globalVar, ?linkage),
   ! external_linkage_type(?linkage),
   static_allocation_type(?globalAlloc, ?type),
-  type_has_size(?type, ?n),
-  ! typeinfo_vtable(?globalVar, _).
+  type_has_size(?type, ?n).
 
 // The sizes of external globals may not match the size of their types.
 dynamically_sized_alloc(?alloc) :-

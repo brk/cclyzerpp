@@ -200,14 +200,6 @@ subset_gep.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
 subset.var_points_to(?aCtx, ?alloc, ?ctx, ?toVar) :-
   subset_gep.gep_var_points_to(?aCtx, ?alloc, ?ctx, ?toVar).
 
-.init subset_cplusplus = CPlusPlus
-
-subset_cplusplus.allocation_type(?alloc, ?type) :-
-  subset_allocation_type.allocation_type(?alloc, ?type).
-
-subset_cplusplus.stripctx_operand_points_to(?to, ?op) :-
-  subset.stripctx.stripctx_operand_points_to(?to, ?op).
-
 .init subset_at_exit = AtExit
 
 subset_at_exit.alloc_aliases(?alloc1, ?alloc2) :-
@@ -221,9 +213,6 @@ subset_at_exit.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?caller
 
 subset_at_exit.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand) :-
   subset.operand_points_to(?aCtx, ?alloc, ?ctx, ?operand).
-
-subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
-  subset_at_exit.at_exit_var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
 .init subset_allocations = Allocations
 
@@ -253,12 +242,6 @@ subset_allocation_type.backpropagated_allocation_type(?alloc, ?type) :-
 
 subset_allocation_type.sig_allocation_type(?alloc, ?type) :-
   subset_signatures.sig_allocation_type(?alloc, ?type).
-
-subset_allocation_type.is_init_by_ctor(?type, ?ctor, ?inFunction, ?alloc) :-
-  subset_cplusplus.is_init_by_ctor(?type, ?ctor, ?inFunction, ?alloc).
-
-subset_allocation_type.heap_allocation_by_alloc_exc(?insn, ?heapAlloc) :-
-  subset.exception_object.heap_allocation_by_alloc_exc(?insn, ?heapAlloc).
 
 .init subset_subobjects = AllocSubobjects
 
@@ -322,8 +305,6 @@ subset_lift.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
 alloc_region(?subAlloc, ?region) :-
   subset_subobjects.alloc_subregion_base(?subAlloc, ?alloc),
   alloc_region(?alloc, ?region).
-alloc_region(?alloc, "heap") :-
-  subset.exception_object.heap_allocation_by_alloc_exc(_, ?alloc).
 alloc_region(?alloc, "heap") :-
   subset.type_indication.heap_allocation_by_type_instr(_, _, ?alloc).
 alloc_region(?alloc, "heap") :-

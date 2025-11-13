@@ -126,11 +126,6 @@
   // [Shared Components]
   //-----------------------------------------------------------------------
 
-  .init exception_object = ExceptionObjectComponent
-
-  exception_object.heap_allocation_by_type_instr(?type, ?insn, ?heapAlloc) :-
-    type_indication.heap_allocation_by_type_instr(?type, ?insn, ?heapAlloc).
-
   .init interp_assignment = InterpAssignment
 
   interp_assignment.reachable_callgraph_edge(?calleeCtx, ?callee, ?callerCtx, ?callerInstr) :-

@@ -23,7 +23,6 @@ alloc_region(?alloc, "unknown") :- unknown_location(?alloc).
 alloc_region(?alloc, "heap") :- argv_alloc(?alloc).
 alloc_region(?alloc, "heap") :- argv_ptr_points_to(_, ?alloc).
 alloc_region(?alloc, "heap") :- heap_allocation(?alloc).
-alloc_region(?alloc, "heap") :- heap_allocation_by_new(_, ?alloc).
 alloc_region(?alloc, "stack") :- stack_allocation(?alloc).
 alloc_region(?alloc, "global") :- global_allocation_by_variable(_, ?alloc).
 // NOTE: Functions each get their own region because it's costly to unify funcs

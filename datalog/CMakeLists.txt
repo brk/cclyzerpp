@@ -13,17 +13,13 @@ set(DL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/points-to/memcpy.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/points-to-options.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/points-to-statistics.dl
-    ${CMAKE_CURRENT_LIST_DIR}/points-to/cplusplus.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/constant-init.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/constant-points-to.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/allocations-decl.dl
-    ${CMAKE_CURRENT_LIST_DIR}/points-to/class-type.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/interprocedural.dl
-    ${CMAKE_CURRENT_LIST_DIR}/points-to/virtual-tables.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/subset.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/type-compatibility.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/constant-exprs.dl
-    ${CMAKE_CURRENT_LIST_DIR}/points-to/cplusplus-exceptions.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/type-back-propagation.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/field-sensitivity.dl
     ${CMAKE_CURRENT_LIST_DIR}/points-to/allocations-subobjects.dl
