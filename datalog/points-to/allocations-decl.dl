@@ -30,13 +30,17 @@ basic_allocation(?alloc) :-
   global_allocation(?alloc);
   signature_allocation(?alloc).
 
+// When "internalize_globals" is on, no globals are considered externally visible,
+//   even if they are marked as having external linkage.
+// When "internalize_globals" is off, globals are considered externally visible
+//   if they are not marked as having internal or private linkage.
 externally_visible_global_allocation(?alloc) :-
-   user_option_value("entrypoints", "library"),
+   user_option_value("internalize_globals", "off"),
    global_allocation_by_variable(?globalVar,?alloc),
    global_var_linkage(?globalVar, ?linkage),
-   ( internal_linkage_type(?linkage)
-   ; private_linkage_type(?linkage)
-   ).
+   ! ( internal_linkage_type(?linkage)
+     ; private_linkage_type(?linkage)
+     ).
 
 // Constructors
 
