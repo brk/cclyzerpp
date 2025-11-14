@@ -44,6 +44,7 @@
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl ptr_points_to(?aCtx: Context, ?alloc: Allocation, ?ptrACtx: Context, ?ptrAlloc: Allocation) inline
   .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
+  .decl alloc_subregion_base(?region: AllocSubregion, ?base: Allocation) inline
 
   //----------------------------------------------------------------------------
   // "Output"/defined rules
@@ -208,7 +209,7 @@
     operand_points_to(?aCtx, ?alloc, ?ctx, ?value),
     // Only escape if stored to non-local memory
     operand_points_to(?addrCtx, ?addrAlloc, ?ctx, ?addr),
-    ( externally_visible_global_allocation(?addrAlloc)
+    ( externally_accessible_alloc(?addrAlloc)
     ; heap_allocation(?addrAlloc)
     ; escaped_alloc(?addrCtx, ?addrAlloc)
     ).
@@ -307,6 +308,51 @@
   escaped_alloc(?pointeeCtx, ?pointee) :-
     escaped_alloc(?ptrCtx, ?ptr),
     ptr_points_to(?pointeeCtx, ?pointee, ?ptrCtx, ?ptr).
+
+  //----------------------------------------------------------------------------
+  // [Subregion Escape]
+  //
+  // If an allocation escapes, all its subregions (fields, array elements, etc.)
+  // also escape, since external code with access to the base can access the
+  // subregions.
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?aCtx, ?subregion) :-
+    escaped_alloc(?aCtx, ?base),
+    alloc_subregion_base(?subregion, ?base).
+
+  //----------------------------------------------------------------------------
+  // [Helper: Externally Visible Allocation or Subregion Thereof]
+  //
+  // An allocation is considered externally accessible if it's an externally
+  // visible global or a subregion (field, array element, etc.) of one.
+  //----------------------------------------------------------------------------
+
+  .decl externally_accessible_alloc(?alloc: Allocation)
+
+  // Base case: externally visible globals are accessible
+  externally_accessible_alloc(?alloc) :-
+    externally_visible_base_global_allocation(?alloc).
+
+  // Recursive case: subregions of externally accessible allocations are accessible
+  externally_accessible_alloc(?subregion) :-
+    externally_accessible_alloc(?base),
+    alloc_subregion_base(?subregion, ?base).
+
+  //----------------------------------------------------------------------------
+  // [Escape via Pointer Storage in Externally Accessible Memory]
+  //
+  // If an allocation is stored (via ptr_points_to) into an externally accessible
+  // location (externally visible global or subregion), it has escaped.
+  // This handles cases like memcpy where ptr_points_to is updated without
+  // explicit store instructions.
+  //----------------------------------------------------------------------------
+
+  escaped_alloc(?aCtx, ?alloc) :-
+    ptr_points_to(?aCtx, ?alloc, ?ptrACtx, ?ptrAlloc),
+    externally_accessible_alloc(?ptrAlloc).
+
+  //----------------------------------------------------------------------------
 
   //----------------------------------------------------------------------------
   // [Component Output Relations]

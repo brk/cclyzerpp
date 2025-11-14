@@ -128,6 +128,10 @@ subset_escape.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr) :-
 subset_escape.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   subset.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
+subset_escape.alloc_subregion_base(?region, ?base) :-
+  subset_subobjects.alloc_subregion_base(?region, ?base).
+
+
 // Copy escape analysis results to top-level relations
 mutated_global(?alloc) :-
   global_allocation(?alloc),

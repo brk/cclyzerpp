@@ -18,7 +18,7 @@
 .decl stack_allocation(?stackAlloc:StackAllocation)
 .decl heap_allocation(?heapAlloc:HeapAllocation)
 .decl global_allocation(?globalAlloc:GlobalAllocation)
-.decl externally_visible_global_allocation(?globalAlloc:GlobalAllocation)
+.decl externally_visible_base_global_allocation(?globalAlloc:GlobalAllocation)
 .decl signature_allocation(?sigAlloc:SignatureAllocation)
 
 allocation(?alloc) :-
@@ -34,7 +34,7 @@ basic_allocation(?alloc) :-
 //   even if they are marked as having external linkage.
 // When "internalize_globals" is off, globals are considered externally visible
 //   if they are not marked as having internal or private linkage.
-externally_visible_global_allocation(?alloc) :-
+externally_visible_base_global_allocation(?alloc) :-
    user_option_value("internalize_globals", "off"),
    global_allocation_by_variable(?globalVar,?alloc),
    global_var_linkage(?globalVar, ?linkage),
