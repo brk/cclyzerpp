@@ -1,21 +1,32 @@
 #include "Signatures.hpp"
 
+#if LLVM_MAJOR_VERSION < 16
+#include <llvm/ADT/Optional.h>
+#define AnOptional llvm::Optional
+#define AnOptional_hasValue(v) v.hasValue()
+#define AnOptional_getValue(v) v.getValue()
+#else
+#define AnOptional std::optional
+#define AnOptional_hasValue(v) v.has_value()
+#define AnOptional_getValue(v) v.value()
+#endif
+
 template <typename T>
 auto extract_from_array(const llvm::json::Array &json_array, size_t index)
-    -> std::optional<T>;
+    -> AnOptional<T>;
 
 template <>
 auto extract_from_array(const llvm::json::Array &json_array, size_t index)
-    -> std::optional<int64_t> {
+    -> AnOptional<int64_t> {
   return json_array[index].getAsInteger();
 }
 
 template <>
 auto extract_from_array(const llvm::json::Array &json_array, size_t index)
-    -> std::optional<std::string> {
+    -> AnOptional<std::string> {
   auto val = json_array[index].getAsString();
-  if (val.has_value()) {
-    return {"@" + val.value().str()};
+  if (AnOptional_hasValue(val)) {
+    return {"@" + AnOptional_getValue(val).str()};
   }
   return {};
 }
@@ -24,14 +35,14 @@ template <typename T, typename... Ts>
 auto extract_many_from_array(const llvm::json::Array &json_array, size_t index)
     -> std::tuple<T, Ts...> {
   auto t = extract_from_array<T>(json_array, index);
-  if (!t.has_value()) {
+  if (!AnOptional_hasValue(t)) {
     throw std::invalid_argument("Wrong type of argument for signature!");
   }
   if constexpr (sizeof...(Ts) == 0) {
-    return std::make_tuple(t.value());
+    return std::make_tuple(AnOptional_getValue(t));
   } else {  // NOLINT: clang-tidy doesn't know about "if constexpr"
     return std::tuple_cat(
-        std::make_tuple(t.value()),
+        std::make_tuple(AnOptional_getValue(t)),
         extract_many_from_array<Ts...>(json_array, index + 1));
   }
 }
