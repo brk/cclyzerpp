@@ -71,10 +71,10 @@
   .decl func_without_defn(?func: FunctionDecl)
 
   //----------------------------------------------------------------------------
-  // [Known Read-Only Function Arguments]
+  // [Known Read-Only / Non-Escaping Function Arguments]
   //
   // For well-known external functions (functions without definitions), we
-  // identify argument positions that are readonly (never mutated or escaped).
+  // identify argument positions that are readonly or nonescaping.
   // This focuses on cases where mutable global variables (e.g., buffers,
   // arrays) are commonly passed as readonly arguments.
   //
@@ -82,6 +82,18 @@
   //----------------------------------------------------------------------------
 
   .decl known_readonly_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+  .decl known_nonescaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+
+  // Memory copy/move functions - dest argument does not escape
+  known_nonescaping_arg(?func, 0) :-
+    func_name(?func, ?name),
+    ( contains("memcpy", ?name)
+    ; contains("memmove", ?name)
+    ; contains("llvm.memcpy.p0", ?name)
+    ; contains("llvm.memmove.p0", ?name)
+    ; contains("strcpy", ?name)
+    ; contains("strncpy", ?name)
+    ).
 
   // Memory copy/move functions - source argument is readonly
   // Common pattern: copying from global buffers
@@ -154,13 +166,15 @@
     !func_decl_to_defn(?func, _).
 
   // Functions without definitions - pointer arguments escape UNLESS marked as readonly
+  // or nonescaping
   // Reason 0: external function (no definition)
   escaping_arg(?func, ?index, 0) :-
     func_without_defn(?func),
     func_ty(?func, ?type),
     func_type_param(?type, ?index, ?paramType),
     pointer_type(?paramType),
-    !known_readonly_arg(?func, ?index).
+    !(known_readonly_arg(?func, ?index)
+     ;known_nonescaping_arg(?func, ?index)).
 
   //----------------------------------------------------------------------------
   // [Mutation Detection]
