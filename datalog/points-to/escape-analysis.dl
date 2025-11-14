@@ -83,17 +83,297 @@
 
   .decl known_readonly_arg(?func: FunctionDecl, ?index: ArgumentIndex)
   .decl known_nonescaping_arg(?func: FunctionDecl, ?index: ArgumentIndex)
+  .decl known_libc_func_name(?name: symbol)
+  .decl known_libc_callback_arg(?name: symbol, ?index: ArgumentIndex)
 
-  // Memory copy/move functions - dest argument does not escape
-  known_nonescaping_arg(?func, 0) :-
-    func_name(?func, ?name),
-    ( contains("memcpy", ?name)
-    ; contains("memmove", ?name)
-    ; contains("llvm.memcpy.p0", ?name)
-    ; contains("llvm.memmove.p0", ?name)
-    ; contains("strcpy", ?name)
-    ; contains("strncpy", ?name)
-    ).
+  known_libc_func_name("@strlen").
+  known_libc_func_name("@strcpy").
+  known_libc_func_name("@strncpy").
+  known_libc_func_name("@strcat").
+  known_libc_func_name("@strncat").
+  known_libc_func_name("@strcmp").
+  known_libc_func_name("@strncmp").
+  known_libc_func_name("@strchr").
+  known_libc_func_name("@strrchr").
+  known_libc_func_name("@strstr").
+  known_libc_func_name("@strpbrk").
+  known_libc_func_name("@strspn").
+  known_libc_func_name("@strcspn").
+  known_libc_func_name("@strtok").
+  known_libc_func_name("@strtok_r").
+  known_libc_func_name("@strdup").
+  known_libc_func_name("@strndup").
+  known_libc_func_name("@strcoll").
+  known_libc_func_name("@strxfrm").
+  known_libc_func_name("@strsep").
+  known_libc_func_name("@strcasestr").
+  known_libc_func_name("@strcasecmp").
+  known_libc_func_name("@strncasecmp").
+  known_libc_func_name("@memcpy").
+  known_libc_func_name("@memmove").
+  known_libc_func_name("@memset").
+  known_libc_func_name("@memcmp").
+  known_libc_func_name("@memchr").
+  known_libc_func_name("@memccpy").
+  known_libc_func_name("@memrchr").
+  known_libc_func_name("@memmem").
+  known_libc_func_name("@free").
+  known_libc_func_name("@xrealloc").
+  known_libc_func_name("@realloc").
+  known_libc_func_name("@reallocarray").
+  known_libc_func_name("@fclose").
+  known_libc_func_name("@fread").
+  known_libc_func_name("@fwrite").
+  known_libc_func_name("@fprintf").
+  known_libc_func_name("@fscanf").
+  known_libc_func_name("@vfprintf").
+  known_libc_func_name("@vfscanf").
+  known_libc_func_name("@fgets").
+  known_libc_func_name("@fputs").
+  known_libc_func_name("@fgetc").
+  known_libc_func_name("@fputc").
+  known_libc_func_name("@getc").
+  known_libc_func_name("@putc").
+  known_libc_func_name("@ungetc").
+  known_libc_func_name("@feof").
+  known_libc_func_name("@ferror").
+  known_libc_func_name("@clearerr").
+  known_libc_func_name("@fseek").
+  known_libc_func_name("@fseeko").
+  known_libc_func_name("@ftell").
+  known_libc_func_name("@ftello").
+  known_libc_func_name("@rewind").
+  known_libc_func_name("@fflush").
+  known_libc_func_name("@setvbuf").
+  known_libc_func_name("@setbuf").
+  known_libc_func_name("@setbuffer").
+  known_libc_func_name("@setlinebuf").
+  known_libc_func_name("@freopen").
+  known_libc_func_name("@fgetpos").
+  known_libc_func_name("@fsetpos").
+  known_libc_func_name("@fileno").
+  known_libc_func_name("@fwide").
+  known_libc_func_name("@fgetws").
+  known_libc_func_name("@fputws").
+  known_libc_func_name("@fopen").
+  known_libc_func_name("@remove").
+  known_libc_func_name("@rename").
+  known_libc_func_name("@tmpnam").
+  known_libc_func_name("@tempnam").
+  known_libc_func_name("@printf").
+  known_libc_func_name("@sprintf").
+  known_libc_func_name("@snprintf").
+  known_libc_func_name("@asprintf").
+  known_libc_func_name("@dprintf").
+  known_libc_func_name("@scanf").
+  known_libc_func_name("@sscanf").
+  known_libc_func_name("@vprintf").
+  known_libc_func_name("@vsprintf").
+  known_libc_func_name("@vsnprintf").
+  known_libc_func_name("@vscanf").
+  known_libc_func_name("@vsscanf").
+  known_libc_func_name("@atoi").
+  known_libc_func_name("@atol").
+  known_libc_func_name("@atoll").
+  known_libc_func_name("@atof").
+  known_libc_func_name("@strtol").
+  known_libc_func_name("@strtoll").
+  known_libc_func_name("@strtoul").
+  known_libc_func_name("@strtoull").
+  known_libc_func_name("@strtod").
+  known_libc_func_name("@strtof").
+  known_libc_func_name("@strtold").
+  known_libc_func_name("@strtoimax").
+  known_libc_func_name("@strtoumax").
+  known_libc_func_name("@getenv").
+  known_libc_func_name("@putenv").
+  known_libc_func_name("@setenv").
+  known_libc_func_name("@system").
+  known_libc_func_name("@opendir").
+  known_libc_func_name("@readdir").
+  known_libc_func_name("@readdir_r").
+  known_libc_func_name("@closedir").
+  known_libc_func_name("@rewinddir").
+  known_libc_func_name("@seekdir").
+  known_libc_func_name("@telldir").
+  known_libc_func_name("@scandir").
+  known_libc_func_name("@fdopendir").
+  known_libc_func_name("@stat").
+  known_libc_func_name("@lstat").
+  known_libc_func_name("@chmod").
+  known_libc_func_name("@chown").
+  known_libc_func_name("@lchown").
+  known_libc_func_name("@access").
+  known_libc_func_name("@mkdir").
+  known_libc_func_name("@mkdirp").
+  known_libc_func_name("@rmdir").
+  known_libc_func_name("@chdir").
+  known_libc_func_name("@getcwd").
+  known_libc_func_name("@unlink").
+  known_libc_func_name("@link").
+  known_libc_func_name("@symlink").
+  known_libc_func_name("@readlink").
+  known_libc_func_name("@realpath").
+  known_libc_func_name("@truncate").
+  known_libc_func_name("@mkfifo").
+  known_libc_func_name("@mknod").
+  known_libc_func_name("@utime").
+  known_libc_func_name("@utimes").
+  known_libc_func_name("@execl").
+  known_libc_func_name("@execlp").
+  known_libc_func_name("@execle").
+  known_libc_func_name("@execv").
+  known_libc_func_name("@execvp").
+  known_libc_func_name("@execve").
+  known_libc_func_name("@execvpe").
+  known_libc_func_name("@time").
+  known_libc_func_name("@localtime").
+  known_libc_func_name("@localtime_r").
+  known_libc_func_name("@gmtime").
+  known_libc_func_name("@gmtime_r").
+  known_libc_func_name("@asctime").
+  known_libc_func_name("@asctime_r").
+  known_libc_func_name("@ctime").
+  known_libc_func_name("@ctime_r").
+  known_libc_func_name("@mktime").
+  known_libc_func_name("@strftime").
+  known_libc_func_name("@strptime").
+  known_libc_func_name("@difftime").
+  known_libc_func_name("@setlocale").
+  known_libc_func_name("@wcslen").
+  known_libc_func_name("@wcscpy").
+  known_libc_func_name("@wcsncpy").
+  known_libc_func_name("@wcscat").
+  known_libc_func_name("@wcsncat").
+  known_libc_func_name("@wcscmp").
+  known_libc_func_name("@wcsncmp").
+  known_libc_func_name("@wcschr").
+  known_libc_func_name("@wcsrchr").
+  known_libc_func_name("@wcsstr").
+  known_libc_func_name("@wcspbrk").
+  known_libc_func_name("@wcsspn").
+  known_libc_func_name("@wcscspn").
+  known_libc_func_name("@wcstok").
+  known_libc_func_name("@wcsdup").
+  known_libc_func_name("@wmemcpy").
+  known_libc_func_name("@wmemmove").
+  known_libc_func_name("@wmemset").
+  known_libc_func_name("@wmemcmp").
+  known_libc_func_name("@wmemchr").
+  known_libc_func_name("@wcstol").
+  known_libc_func_name("@wcstoll").
+  known_libc_func_name("@wcstoul").
+  known_libc_func_name("@wcstoull").
+  known_libc_func_name("@wcstod").
+  known_libc_func_name("@wcstof").
+  known_libc_func_name("@wcstold").
+  known_libc_func_name("@pthread_create").
+  known_libc_func_name("@pthread_mutex_init").
+  known_libc_func_name("@pthread_mutex_destroy").
+  known_libc_func_name("@pthread_mutex_lock").
+  known_libc_func_name("@pthread_mutex_trylock").
+  known_libc_func_name("@pthread_mutex_unlock").
+  known_libc_func_name("@pthread_cond_init").
+  known_libc_func_name("@pthread_cond_destroy").
+  known_libc_func_name("@pthread_cond_wait").
+  known_libc_func_name("@pthread_cond_timedwait").
+  known_libc_func_name("@pthread_cond_signal").
+  known_libc_func_name("@pthread_cond_broadcast").
+  known_libc_func_name("@pthread_attr_init").
+  known_libc_func_name("@pthread_attr_destroy").
+  known_libc_func_name("@pthread_rwlock_init").
+  known_libc_func_name("@pthread_rwlock_destroy").
+  known_libc_func_name("@pthread_rwlock_rdlock").
+  known_libc_func_name("@pthread_rwlock_wrlock").
+  known_libc_func_name("@pthread_rwlock_unlock").
+  known_libc_func_name("@dlopen").
+  known_libc_func_name("@dlsym").
+  known_libc_func_name("@dlclose").
+  known_libc_func_name("@dlerror").
+  known_libc_func_name("@regcomp").
+  known_libc_func_name("@regexec").
+  known_libc_func_name("@regfree").
+  known_libc_func_name("@regerror").
+  known_libc_func_name("@qsort").
+  known_libc_func_name("@bsearch").
+  known_libc_func_name("@basename").
+  known_libc_func_name("@dirname").
+  known_libc_func_name("@getopt").
+  known_libc_func_name("@getopt_long").
+  known_libc_func_name("@inet_ntoa").
+  known_libc_func_name("@inet_aton").
+  known_libc_func_name("@inet_addr").
+  known_libc_func_name("@inet_pton").
+  known_libc_func_name("@gethostbyname").
+  known_libc_func_name("@getaddrinfo").
+  known_libc_func_name("@freeaddrinfo").
+  known_libc_func_name("@gethostname").
+  known_libc_func_name("@getservbyname").
+  known_libc_func_name("@getprotobyname").
+  known_libc_func_name("@sigaddset").
+  known_libc_func_name("@sigdelset").
+  known_libc_func_name("@sigemptyset").
+  known_libc_func_name("@sigfillset").
+  known_libc_func_name("@sigismember").
+  known_libc_func_name("@sigpending").
+  known_libc_func_name("@sigsuspend").
+  known_libc_func_name("@mmap").
+  known_libc_func_name("@munmap").
+  known_libc_func_name("@mprotect").
+  known_libc_func_name("@msync").
+  known_libc_func_name("@mlock").
+  known_libc_func_name("@munlock").
+  known_libc_func_name("@madvise").
+  known_libc_func_name("@shmdt").
+  known_libc_func_name("@sem_init").
+  known_libc_func_name("@sem_destroy").
+  known_libc_func_name("@sem_wait").
+  known_libc_func_name("@sem_trywait").
+  known_libc_func_name("@sem_post").
+  known_libc_func_name("@sem_getvalue").
+  known_libc_func_name("@sem_open").
+  known_libc_func_name("@mq_open").
+  known_libc_func_name("@poll").
+  known_libc_func_name("@getpwnam").
+  known_libc_func_name("@getgrnam").
+  known_libc_func_name("@openlog").
+  known_libc_func_name("@iconv_open").
+  known_libc_func_name("@perror").
+  known_libc_func_name("@getpass").
+  known_libc_func_name("@cfgetispeed").
+  known_libc_func_name("@cfgetospeed").
+  known_libc_func_name("@cfsetispeed").
+  known_libc_func_name("@cfsetospeed").
+  known_libc_func_name("@popen").
+  known_libc_func_name("@pclose").
+  known_libc_func_name("@mkstemp").
+  known_libc_func_name("@mkdtemp").
+  known_libc_func_name("@wait").
+
+  known_libc_callback_arg("@qsort", 3).
+  known_libc_callback_arg("@bsearch", 4).
+  known_libc_callback_arg("@signal", 1).
+  known_libc_callback_arg("@sigaction", 1).
+  known_libc_callback_arg("@atexit", 0).
+  known_libc_callback_arg("@at_quick_exit", 0).
+  known_libc_callback_arg("@onexit", 0).
+  known_libc_callback_arg("@pthread_create", 2).
+  known_libc_callback_arg("@pthread_cleanup_push", 0).
+  known_libc_callback_arg("@pthread_key_create", 1).
+  known_libc_callback_arg("@scandir", 2).
+  known_libc_callback_arg("@scandir", 3).
+  known_libc_callback_arg("@ftw", 1).
+  known_libc_callback_arg("@tsearch", 2).
+  known_libc_callback_arg("@tfind", 2).
+  known_libc_callback_arg("@tdelete", 2).
+  known_libc_callback_arg("@twalk", 1).
+  known_libc_callback_arg("@tdestroy", 1).
+  known_libc_callback_arg("@hsearch_r", 0).
+  known_libc_callback_arg("@hsearch_r", 2).
+  known_libc_callback_arg("@qsort_r", 3).
+  known_libc_callback_arg("@mergesort", 3). // BSD
+  known_libc_callback_arg("@heapsort", 3). // BSD
+  known_libc_callback_arg("@glob", 2).
 
   // Memory copy/move functions - source argument is readonly
   // Common pattern: copying from global buffers
@@ -111,32 +391,6 @@
     ; contains("llvm.memmove.p0", ?name)   // llvm.memmove.p0.p0.i64, etc.
     ).
 
-  // Memory search functions - all pointer arguments are readonly
-  // Common pattern: searching in global buffers
-  known_readonly_arg(?func, ?index) :-
-    func_name(?func, ?name),
-    ( contains("memchr", ?name)   // memchr(ptr, val, size) - arg 0 is readonly
-    ; contains("memcmp", ?name)   // memcmp(ptr1, ptr2, size) - args 0,1 are readonly
-    ),
-    func_ty(?func, ?type),
-    func_type_param(?type, ?index, ?paramType),
-    pointer_type(?paramType).
-
-  // Binary search - array argument is readonly
-  // bsearch(key, array, count, size, compar) - args 0,1 are readonly
-  known_readonly_arg(?func, ?index) :-
-    func_name(?func, ?name),
-    contains("bsearch", ?name),
-    (?index = 0 ; ?index = 1).
-
-  // String copy functions - source argument is readonly
-  // Common pattern: copying from global string buffers
-  known_readonly_arg(?func, 1) :-
-    func_name(?func, ?name),
-    ( contains("strcpy", ?name)    // strcpy(dest, src) - arg 1 (src) is readonly
-    ; contains("strncpy", ?name)   // strncpy(dest, src, n) - arg 1 (src) is readonly
-    ).
-
   // String search/comparison - all pointer arguments are readonly
   // Common pattern: searching or comparing global buffers/strings
   known_readonly_arg(?func, ?index) :-
@@ -151,15 +405,57 @@
     ; contains("strspn", ?name)
     ; contains("strpbrk", ?name)
     ),
-    func_ty(?func, ?type),
-    func_type_param(?type, ?index, ?paramType),
-    pointer_type(?paramType).
+    (?index = 0 ; ?index = 1 ; ?index = 2).
+
+  // Memory search functions - all pointer arguments are readonly
+  // Common pattern: searching in global buffers
+  known_readonly_arg(?func, ?index) :-
+    func_name(?func, ?name),
+    ( contains("memchr", ?name)   // memchr(ptr, val, size) - arg 0 is readonly
+    ; contains("memcmp", ?name)   // memcmp(ptr1, ptr2, size) - args 0,1 are readonly
+    ),
+    (?index = 0 ; ?index = 1 ; ?index = 2).
+
+  // Binary search - array argument is readonly
+  // bsearch(key, array, count, size, compar) - args 0,1 are readonly
+  known_readonly_arg(?func, ?index) :-
+    func_name(?func, ?name),
+    contains("bsearch", ?name),
+    (?index = 0 ; ?index = 1).
+
+  // String copy functions - source argument is readonly
+  // String copy functions - source argument is readonly
+  // Common pattern: copying from global string buffers
+  known_readonly_arg(?func, 1) :-
+    func_name(?func, ?name),
+    ( contains("strcpy", ?name)    // strcpy(dest, src) - arg 1 (src) is readonly
+    ; contains("strncpy", ?name)   // strncpy(dest, src, n) - arg 1 (src) is readonly
+    ).
 
   // LLVM intrinsic: objectsize - pointer argument is readonly
   // llvm.objectsize.i64.p0(ptr, ...) - arg 0 is readonly
   known_readonly_arg(?func, 0) :-
     func_name(?func, ?name),
     contains("llvm.objectsize.", ?name).
+
+
+  // Memory copy/move intrinsics - dest argument does not escape
+  known_nonescaping_arg(?func, 0) :-
+    func_name(?func, ?name),
+    ( contains("llvm.memcpy.p0", ?name)
+    ; contains("llvm.memmove.p0", ?name)
+    ).
+
+  // Most libc functions do not cause function pointers to escape,
+  // with a few exceptions.
+  known_nonescaping_arg(?func, ?index) :-
+    func_name(?func, ?name),
+    known_libc_func_name(?name),
+    !known_libc_callback_arg(?name, ?index),
+    func_ty(?func, ?type),
+    func_type_param(?type, ?index, ?paramType),
+    pointer_type(?paramType).
+
 
   func_without_defn(?func) :-
     func_decl(?func),
