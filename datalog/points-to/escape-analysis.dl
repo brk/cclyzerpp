@@ -490,16 +490,13 @@
   //----------------------------------------------------------------------------
   // [Escape via Return]
   //
-  // A value escapes if it is returned from an escaping function (i.e., a
-  // function whose address has escaped). This handles cases where function
-  // pointers are stored in globals or passed to external code.
+  // A value escapes if it is returned from a function whose address escaped.
   //----------------------------------------------------------------------------
 
   escaped_alloc(?aCtx, ?alloc) :-
     reachable_context(?ctx, ?func),
     func_returns_value(?retValue, ?func),
     operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue),
-    // Only escape if returned from a function whose address has escaped
     global_allocation_by_func(?func, ?funcAlloc),
     empty_alloc_context(?funcCtx),
     escaped_alloc(?funcCtx, ?funcAlloc).
