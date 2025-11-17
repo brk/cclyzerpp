@@ -59,8 +59,8 @@
   // Track which function argument positions cause escape
   // The ?reason parameter identifies why the argument escapes:
   //   0 = external function (no definition)
-  //   1 = returned from function (direct)
-  //   2 = returned from function (points-to)
+  //   1 unused
+  //   2 unused
   //   3 = stored to global
   //   4 = stored to escaped memory
   //   5 = passed to escaping function (call)
@@ -490,14 +490,19 @@
   //----------------------------------------------------------------------------
   // [Escape via Return]
   //
-  // A value escapes if it is returned from a function.
-  // We track this at the allocation level using points-to information.
+  // A value escapes if it is returned from an escaping function (i.e., a
+  // function whose address has escaped). This handles cases where function
+  // pointers are stored in globals or passed to external code.
   //----------------------------------------------------------------------------
 
   escaped_alloc(?aCtx, ?alloc) :-
     reachable_context(?ctx, ?func),
     func_returns_value(?retValue, ?func),
-    operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
+    operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue),
+    // Only escape if returned from a function whose address has escaped
+    global_allocation_by_func(?func, ?funcAlloc),
+    empty_alloc_context(?funcCtx),
+    escaped_alloc(?funcCtx, ?funcAlloc).
 
   //----------------------------------------------------------------------------
   // [Escape via Store to Memory]
@@ -526,29 +531,9 @@
 
   //----------------------------------------------------------------------------
   // [Escape via Function Arguments]
-  //
-  // Case 1: Argument is returned from the function (direct)
-  // If a parameter flows to a return value, that argument position escapes
   //----------------------------------------------------------------------------
-
-  // Reason 1: returned from function (direct)
-  escaping_arg(?callee, ?index, 1) :-
-    func(?callee),
-    func_param(?callee, ?index, ?param),
-    func_returns_value(?retValue, ?callee),
-    // Simple data flow: parameter is directly returned
-    ?param = ?retValue.
-
-  // Reason 2: returned from function (points-to)
-  escaping_arg(?callee, ?index, 2) :-
-    func(?callee),
-    func_param(?callee, ?index, ?param),
-    func_returns_value(?retValue, ?callee),
-    // Points-to based data flow: return value points to what param points to
-    reachable_context(?ctx, ?callee),
-    var_points_to(?aCtx, ?alloc, ?ctx, ?param),
-    operand_points_to(?aCtx, ?alloc, ?ctx, ?retValue).
-
+  // Reason 1 currently unused
+  // Reason 2 currently unused
   // Reason 3 currently unused
 
   // Reason 4: stored to escaped memory
