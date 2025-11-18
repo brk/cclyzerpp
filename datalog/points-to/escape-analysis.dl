@@ -439,11 +439,13 @@
     contains("llvm.objectsize.", ?name).
 
 
-  // Memory copy/move intrinsics - dest argument does not escape
+  // Memory copy/move/set intrinsics - dest argument does not escape
   known_nonescaping_arg(?func, 0) :-
     func_name(?func, ?name),
-    ( contains("llvm.memcpy.p0", ?name)
-    ; contains("llvm.memmove.p0", ?name)
+    ( contains("llvm.memcpy.", ?name)
+    ; contains("llvm.memmove.", ?name)
+    ; contains("llvm.memset.", ?name)
+    ; contains("llvm.experimental.memset.", ?name)
     ).
 
   // Most libc functions do not cause function pointers to escape,
