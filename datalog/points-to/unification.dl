@@ -489,8 +489,14 @@ unification_escape.ptr_points_to(?aCtx, ?alloc, ?ctx, ?ptr) :-
 unification_escape.var_points_to(?aCtx, ?alloc, ?ctx, ?var) :-
   unification.var_points_to(?aCtx, ?alloc, ?ctx, ?var).
 
+unification_escape.alloc_subregion(?allocSub) :-
+  unification_subobjects.alloc_subregion(?allocSub).
+
 unification_escape.alloc_subregion_base(?region, ?base) :-
   unification_subobjects.alloc_subregion_base(?region, ?base).
+
+unification_escape.alloc_subregion_root(?region, ?root) :-
+  unification_subobjects.alloc_subregion_root(?region, ?root).
 
 // Copy escape analysis results to top-level relations
 mutated_global(?alloc) :-

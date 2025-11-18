@@ -44,7 +44,9 @@
   .decl operand_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?operand: Operand) inline
   .decl ptr_points_to(?aCtx: Context, ?alloc: Allocation, ?ptrACtx: Context, ?ptrAlloc: Allocation) inline
   .decl var_points_to(?aCtx: Context, ?alloc: Allocation, ?ctx: Context, ?var: Variable) inline
+  .decl alloc_subregion(?allocSub: AllocSubregion) inline
   .decl alloc_subregion_base(?region: AllocSubregion, ?base: Allocation) inline
+  .decl alloc_subregion_root(?region: AllocSubregion, ?root: Allocation) inline
 
   //----------------------------------------------------------------------------
   // "Output"/defined rules
@@ -488,6 +490,36 @@
     instr_func(?instr, ?instrFunc),
     store_instr_address(?instr, ?address),
     operand_points_to(?aCtx, ?alloc, ?ctx, ?address).
+
+  //----------------------------------------------------------------------------
+  // [Mutation via External Function]
+  //
+  // An allocation is mutated if it is passed to an external/unknown function
+  // at a parameter index which is not known to be readonly.
+  //----------------------------------------------------------------------------
+
+  mutated_alloc(?alloc) :-
+    allocation(?alloc),
+    empty_alloc_context(?aCtx),
+    reachable_callgraph_edge(_, ?callee, ?callerCtx, ?callerInstr),
+    actual_arg(?callerInstr, ?index, ?arg),
+    !known_readonly_arg(?callee, ?index),
+    operand_points_to(?aCtx, ?alloc, ?callerCtx, ?arg).
+
+
+  //----------------------------------------------------------------------------
+  // [Mutation Propagation to Base Allocations]
+  //
+  // If a subregion of a global is mutated, the root global is also considered
+  // mutated, since modifying a field/element means the containing structure
+  // has been modified.
+  //----------------------------------------------------------------------------
+
+  mutated_alloc(?globalAlloc) :-
+    global_allocation(?globalAlloc),
+    alloc_subregion(?subregion),
+    alloc_subregion_root(?subregion, ?globalAlloc),
+    mutated_alloc(?subregion).
 
   //----------------------------------------------------------------------------
   // [Escape via Return]
