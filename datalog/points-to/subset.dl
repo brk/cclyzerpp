@@ -135,7 +135,7 @@ subset_escape.alloc_subregion_base(?region, ?base) :-
 // Copy escape analysis results to top-level relations
 mutated_global(?alloc) :-
   global_allocation(?alloc),
-  subset_escape.component_mutated_global(?alloc).
+  subset_escape.component_mutated_alloc(?alloc).
 
 escaped_global(?alloc) :-
   global_allocation(?alloc),

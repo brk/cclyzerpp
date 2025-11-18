@@ -53,8 +53,8 @@
   // Track which allocations have escaped (not just globals, for transitive reasoning)
   .decl escaped_alloc(?aCtx: Context, ?alloc: Allocation)
 
-  // Track globals that are mutated
-  .decl mutated_global(?alloc: GlobalAllocation)
+  // Track which allocations are mutated (not just globals, for internal reasoning)
+  .decl mutated_alloc(?alloc: Allocation)
 
   // Track which function argument positions cause escape
   // The ?reason parameter identifies why the argument escapes:
@@ -477,12 +477,12 @@
   //----------------------------------------------------------------------------
   // [Mutation Detection]
   //
-  // A global is mutated if it is the target of a store instruction.
+  // An allocation is mutated if it is the target of a store instruction.
   // We use the points-to analysis to determine what a store address points to.
   //----------------------------------------------------------------------------
 
-  mutated_global(?alloc) :-
-    global_allocation(?alloc),
+  mutated_alloc(?alloc) :-
+    allocation(?alloc),
     empty_alloc_context(?aCtx),
     reachable_context(?ctx, ?instrFunc),
     instr_func(?instr, ?instrFunc),
@@ -654,12 +654,12 @@
   // These will be copied to the top-level relations by subset.dl/unification.dl
   //----------------------------------------------------------------------------
 
-  .decl component_mutated_global(?alloc: GlobalAllocation)
+  .decl component_mutated_alloc(?alloc: Allocation)
   .decl component_escaped_alloc(?aCtx: Context, ?alloc: Allocation)
   .decl component_escaping_arg(?func: FunctionDecl, ?index: ArgumentIndex, ?reason: number)
   .decl component_func_without_defn(?func: FunctionDecl)
 
-  component_mutated_global(?alloc) :- mutated_global(?alloc).
+  component_mutated_alloc(?alloc) :- mutated_alloc(?alloc).
   component_escaped_alloc(?aCtx, ?alloc) :- escaped_alloc(?aCtx, ?alloc).
   component_escaping_arg(?func, ?index, ?reason) :- escaping_arg(?func, ?index, ?reason).
   component_func_without_defn(?func) :- func_without_defn(?func).
@@ -673,5 +673,5 @@
 //------------------------------------------------------------------------------
 
 // Note: The actual population happens in subset.dl and unification.dl, which do:
-//   mutated_or_escaped_global(?alloc) :- subset_escape.component_mutated_global(?alloc).
+//   mutated_global(?alloc) :- global_allocation(?alloc), subset_escape.component_mutated_alloc(?alloc).
 //   etc.
