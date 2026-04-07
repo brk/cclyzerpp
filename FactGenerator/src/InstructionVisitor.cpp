@@ -474,7 +474,8 @@ void InstructionVisitor::visitGetElementPtrInst(
         pred::getelementptr::index, iref, gep_operand, index - 1);
 
     if (const auto *c = dyn_cast<llvm::Constant>(gep_operand)) {
-      if (c->getUniqueInteger().isIntN(16)) {
+      if (c->getType()->isIntOrIntVectorTy() &&
+          c->getUniqueInteger().isIntN(16)) {
         // Compute integer string representation
         // TODO(lb): Compute both signed and unsigned representations
 #if LLVM_VERSION_MAJOR > 12
