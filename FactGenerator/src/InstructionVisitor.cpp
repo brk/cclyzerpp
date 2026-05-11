@@ -469,13 +469,11 @@ void InstructionVisitor::visitGetElementPtrInst(
 
   for (unsigned index = 1; index < GEP.getNumOperands(); ++index) {
     const llvm::Value *gep_operand = GEP.getOperand(index);
-
     refmode_t opref = writeInstrOperand(
         pred::getelementptr::index, iref, gep_operand, index - 1);
 
-    if (const auto *c = dyn_cast<llvm::Constant>(gep_operand)) {
-      if (c->getType()->isIntOrIntVectorTy() &&
-          c->getUniqueInteger().isIntN(16)) {
+    if (const auto *c = dyn_cast<llvm::ConstantInt>(gep_operand)) {
+      if (c->getUniqueInteger().isIntN(16)) {
         // Compute integer string representation
         // TODO(lb): Compute both signed and unsigned representations
 #if LLVM_VERSION_MAJOR > 12
