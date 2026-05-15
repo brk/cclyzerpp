@@ -43,6 +43,10 @@ auto FactGenerator::processModule(
 
   // iterating over global variables in a module
   for (const auto &global_var : Mod.globals()) {
+    // As far as the source program is concerned, these values don't exist.
+    if (global_var.getName().startswith("__PRETTY_FUNCTION__.")) {
+      continue;
+    }
     refmode_t id = refmode<llvm::GlobalValue>(global_var);
     writeGlobalVar(global_var, id);
   }
